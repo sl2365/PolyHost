@@ -1,3 +1,6 @@
+:: First run downloads JUCE into build folder - fully portable.
+:: Require Compiler: Visual Studio Build Tools 2022 — tick "Desktop development with C++" during install: https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022
+
 @echo off
 :: ============================================================
 :: PolyHost Build Script - Fully Portable
