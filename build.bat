@@ -21,6 +21,8 @@
 :: fully offline.
 :: ============================================================
 
+setlocal
+
 set "ROOT=%~dp0"
 set "CMAKE=%ROOT%tools\cmake\bin\cmake.exe"
 set "BUILD_DIR=%ROOT%build"
@@ -28,85 +30,89 @@ set "DIST_DIR=%ROOT%dist"
 set "EXENAME=PolyHost.exe"
 set "VST2_SDK=%ROOT%tools\vstsdk2.4"
 
-:: -- Sanity check: CMake -----------------------------------------------
+echo.
+echo ============================================================
+echo PolyHost Build Script
+echo ============================================================
+echo.
+
 if not exist "%CMAKE%" (
+    echo ERROR: cmake.exe not found at:
+    echo %CMAKE%
     echo.
-    echo  ERROR: cmake.exe not found at:
-    echo         %CMAKE%
-    echo.
-    echo  Download the Windows x64 ZIP ^(no installer^) from:
-    echo    https://cmake.org/download/
-    echo  Extract so that tools\cmake\bin\cmake.exe exists.
+    echo Download the Windows x64 ZIP from:
+    echo https://cmake.org/download/
+    echo Extract it so this file exists:
+    echo tools\cmake\bin\cmake.exe
     echo.
     pause
     exit /b 1
 )
 
-:: -- Sanity check: VS Build Tools --------------------------------------
 set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 if not exist "%VSWHERE%" (
-    echo.
-    echo  ERROR: Visual Studio Build Tools not found.
-    echo  Install VS Build Tools 2022 (free, compiler only) from:
-    echo    https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022
-    echo  During install tick: Desktop development with C++
+    echo ERROR: Visual Studio Build Tools not found.
+    echo Install Visual Studio 2022 Community or Build Tools.
+    echo Make sure Desktop development with C++ is installed.
     echo.
     pause
     exit /b 1
 )
 
-:: -- VST2 SDK status ---------------------------------------------------
 if exist "%VST2_SDK%\pluginterfaces\vst2.x\aeffect.h" (
-    echo  VST2 SDK found -- VST2 support will be compiled in.
+    echo VST2 SDK found - VST2 support will be compiled in.
 ) else (
-    echo  VST2 SDK not found at tools\vstsdk2.4\ -- building without VST2.
-    echo  To add VST2: place the SDK so this file exists:
-    echo    tools\vstsdk2.4\pluginterfaces\vst2.x\aeffect.h
+    echo VST2 SDK not found at tools\vstsdk2.4 - building without VST2.
+    echo To add VST2, place this file here:
+    echo tools\vstsdk2.4\pluginterfaces\vst2.x\aeffect.h
 )
 echo.
 
 cd /d "%ROOT%"
 
-:: -- Close any running instance ----------------------------------------
 echo Closing any running instances of %EXENAME%...
 taskkill /IM "%EXENAME%" /F 2>nul
 
-:: -- Clean previous build ----------------------------------------------
 echo Cleaning previous build...
 if exist "%BUILD_DIR%" rmdir /s /q "%BUILD_DIR%"
 
-:: -- Configure ---------------------------------------------------------
 echo.
-echo Configuring (first run downloads JUCE -- needs internet)...
-
-"%CMAKE%" -B "%BUILD_DIR%" -G "Visual Studio 17 2022" -A x64
-if %ERRORLEVEL% NEQ 0 (
+echo Configuring project...
+"%CMAKE%" -B "%BUILD_DIR%" -G "Visual Studio 18 2026" -A x64
+if errorlevel 1 (
     echo.
-    echo  Configure step FAILED. See errors above.
+    echo Configure step FAILED.
     pause
     exit /b 1
 )
 
-:: -- Build -------------------------------------------------------------
 echo.
 echo Building Release...
-
 "%CMAKE%" --build "%BUILD_DIR%" --config Release
-if %ERRORLEVEL% NEQ 0 (
+if errorlevel 1 (
     echo.
-    echo  Build FAILED. See errors above.
+    echo Build FAILED.
     pause
     exit /b 1
 )
 
-:: -- Copy output to dist\ ----------------------------------------------
 echo.
-echo Build successful! Copying to dist\...
+echo Copying output to dist...
 if not exist "%DIST_DIR%" mkdir "%DIST_DIR%"
-copy /Y "%BUILD_DIR%\PolyHost_artefacts\Release\%EXENAME%" "%DIST_DIR%\%EXENAME%"
+
+if exist "%BUILD_DIR%\PolyHost_artefacts\Release\%EXENAME%" (
+    copy /Y "%BUILD_DIR%\PolyHost_artefacts\Release\%EXENAME%" "%DIST_DIR%\%EXENAME%"
+) else (
+    echo Expected EXE not found at:
+    echo %BUILD_DIR%\PolyHost_artefacts\Release\%EXENAME%
+    echo.
+    echo Build may have succeeded with a different output path.
+    pause
+    exit /b 1
+)
 
 echo.
-echo Starting %EXENAME%...
+echo Build complete. Launching %EXENAME% in 2 seconds...
 timeout /t 2 /nobreak >nul
 start "" "%DIST_DIR%\%EXENAME%"
 exit

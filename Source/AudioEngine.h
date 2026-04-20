@@ -6,7 +6,8 @@ class AudioEngine : private juce::ChangeListener
 public:
     AudioEngine();
     ~AudioEngine() override;
-    void initialise();
+    void initialise(const juce::String& savedAudioDeviceState = {});
+    juce::String createAudioDeviceStateXml() const;
     void shutdown();
     juce::AudioProcessorGraph::NodeID addPlugin(std::unique_ptr<juce::AudioPluginInstance> instance, bool isSynth);
     void removePlugin(juce::AudioProcessorGraph::NodeID nodeId);

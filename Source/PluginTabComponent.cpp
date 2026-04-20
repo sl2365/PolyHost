@@ -1,32 +1,33 @@
 #include "PluginTabComponent.h"
 #include "AudioEngine.h"
 
-PluginTabComponent::PluginTabComponent(AudioEngine& engine, SlotType type, int index)
-    : audioEngine(engine), slotType(type), slotIndex(index)
+PluginTabComponent::PluginTabComponent(AudioEngine& engine, int index)
+    : audioEngine(engine), slotIndex(index)
 {
-    formatManager.addDefaultFormats();
+    formatManager.addFormat(std::make_unique<juce::VST3PluginFormat>());
+   #if JUCE_PLUGINHOST_VST
+    formatManager.addFormat(std::make_unique<juce::VSTPluginFormat>());
+   #endif
+
     addAndMakeVisible(loadButton);
     loadButton.setColour(juce::TextButton::buttonColourId, colourForType(slotType).withAlpha(0.6f));
     loadButton.onClick = [this]
     {
-        juce::FileChooser chooser("Open Plugin",
-            juce::File::getSpecialLocation(juce::File::commonFilesDirectory),
-            "*.vst3;*.dll;*.clap");
-        if (chooser.browseForFileToOpen()) loadPlugin(chooser.getResult());
+        juce::FileChooser chooser("Open Plugin", juce::File(), "*.vst3;*.dll;*.clap");
+        if (chooser.browseForFileToOpen())
+            loadPlugin(chooser.getResult());
     };
+
     addAndMakeVisible(statusLabel);
     statusLabel.setJustificationType(juce::Justification::centred);
     statusLabel.setColour(juce::Label::textColourId, juce::Colours::lightgrey);
-    statusLabel.setText(slotType == SlotType::Synth ? "Synth slot - drop or click to load"
-                                                    : "FX slot - drop or click to load",
-                        juce::dontSendNotification);
+    statusLabel.setText("Empty slot - drop or click to load", juce::dontSendNotification);
 }
 
 PluginTabComponent::~PluginTabComponent()
 {
-    editorWindow.reset();
     pluginEditor.reset();
-    if (nodeId.isValid()) audioEngine.removePlugin(nodeId);
+    if (nodeId != juce::AudioProcessorGraph::NodeID()) audioEngine.removePlugin(nodeId);
 }
 
 bool PluginTabComponent::loadPlugin(const juce::File& pluginFile)
@@ -52,26 +53,49 @@ bool PluginTabComponent::loadPlugin(const juce::File& pluginFile)
         return false;
     }
     clearPlugin();
+    loadedPluginFile = pluginFile;
+    slotType = desc.isInstrument ? SlotType::Synth : SlotType::FX;
     nodeId = audioEngine.addPlugin(std::move(instance), desc.isInstrument);
     showPluginEditor();
+    sendChangeMessage();
     return true;
 }
 
 void PluginTabComponent::clearPlugin()
 {
-    editorWindow.reset();
+    if (pluginEditor != nullptr)
+        removeChildComponent(pluginEditor.get());
+
     pluginEditor.reset();
-    if (nodeId.isValid()) { audioEngine.removePlugin(nodeId); nodeId = {}; }
+
+    if (nodeId != juce::AudioProcessorGraph::NodeID())
+    {
+        audioEngine.removePlugin(nodeId);
+        nodeId = {};
+    }
+
+    loadedPluginFile = {};
+    slotType = SlotType::Empty;
+
     loadButton.setVisible(true);
     statusLabel.setVisible(true);
+    loadButton.setColour(juce::TextButton::buttonColourId, colourForType(slotType).withAlpha(0.6f));
+    statusLabel.setText("Empty slot - drop or click to load", juce::dontSendNotification);
+
+    resized();
+    sendChangeMessage();
 }
 
 void PluginTabComponent::showPluginEditor()
 {
+    pluginEditor.reset();
     loadButton.setVisible(false);
     statusLabel.setVisible(false);
+
     auto* node = audioEngine.getGraph().getNodeForId(nodeId);
-    if (node == nullptr) return;
+    if (node == nullptr)
+        return;
+
     auto* proc = node->getProcessor();
     if (proc == nullptr || !proc->hasEditor())
     {
@@ -79,13 +103,19 @@ void PluginTabComponent::showPluginEditor()
         statusLabel.setVisible(true);
         return;
     }
+
     pluginEditor.reset(proc->createEditor());
-    auto* win = new juce::ResizableWindow(proc->getName(), true);
-    win->setContentOwned(pluginEditor.release(), true);
-    win->setResizable(true, false);
-    win->centreWithSize(win->getWidth(), win->getHeight());
-    win->setVisible(true);
-    editorWindow.reset(win);
+    addAndMakeVisible(pluginEditor.get());
+
+    const auto editorBounds = pluginEditor->getLocalBounds();
+    if (auto* top = getTopLevelComponent())
+    {
+        auto bounds = top->getBounds();
+        bounds.setWidth(juce::jmax(bounds.getWidth(),  editorBounds.getWidth()  + 80));
+        bounds.setHeight(juce::jmax(bounds.getHeight(), editorBounds.getHeight() + 140));
+        top->setBounds(bounds);
+    }
+    resized();
 }
 
 juce::String PluginTabComponent::getPluginName() const
@@ -108,7 +138,14 @@ void PluginTabComponent::paint(juce::Graphics& g)
 
 void PluginTabComponent::resized()
 {
-    auto area = getLocalBounds().reduced(20);
+    auto area = getLocalBounds().reduced(12);
+
+    if (pluginEditor != nullptr)
+    {
+        pluginEditor->setBounds(area);
+        return;
+    }
+
     statusLabel.setBounds(area.removeFromTop(40));
     loadButton.setBounds(area.withSizeKeepingCentre(240, 44));
 }
@@ -128,4 +165,30 @@ bool PluginTabComponent::isPluginFile(const juce::File& f)
 {
     auto ext = f.getFileExtension().toLowerCase();
     return ext == ".vst3" || ext == ".dll" || ext == ".clap";
+}
+
+juce::File PluginTabComponent::getPluginFile() const
+{
+    return loadedPluginFile;
+}
+
+juce::MemoryBlock PluginTabComponent::getPluginState() const
+{
+    juce::MemoryBlock state;
+
+    if (auto* node = audioEngine.getGraph().getNodeForId(nodeId))
+        node->getProcessor()->getStateInformation(state);
+
+    return state;
+}
+
+bool PluginTabComponent::restorePluginState(const juce::MemoryBlock& state)
+{
+    if (auto* node = audioEngine.getGraph().getNodeForId(nodeId))
+    {
+        node->getProcessor()->setStateInformation(state.getData(), (int) state.getSize());
+        return true;
+    }
+
+    return false;
 }

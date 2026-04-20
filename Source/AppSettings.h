@@ -7,15 +7,32 @@ public:
     AppSettings();
     void load();
     void save();
+
     juce::String getMidiDeviceName() const;
     void setMidiDeviceName(const juce::String& name);
+
     juce::String getAudioDeviceName() const;
     void setAudioDeviceName(const juce::String& name);
+
     int getWindowWidth() const;
     int getWindowHeight() const;
     void setWindowSize(int w, int h);
+
+    juce::String getAudioDeviceState() const;
+    void setAudioDeviceState(const juce::String& xmlText);
+
     static juce::File getSettingsFile();
+    static juce::File getPresetsDirectory();
+    static juce::File getAppDirectory();
+    static juce::String makePathPortable(const juce::File& file);
+    static juce::File resolvePortablePath(const juce::String& path);
+    static juce::String getDriveFlexiblePath(const juce::File& file);
+    static juce::File resolvePluginPath(const juce::String& absolutePath,
+                                        const juce::String& relativePath,
+                                        const juce::String& driveFlexiblePath);
+
 private:
     std::unique_ptr<juce::XmlElement> xml;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AppSettings)
 };

@@ -56,8 +56,12 @@ public:
             }
         }
 
-        void closeButtonPressed() override { juce::JUCEApplication::getInstance()->systemRequestedQuit(); }
-
+        void closeButtonPressed() override
+        {
+            if (mainComponent == nullptr || mainComponent->requestQuit())
+                juce::JUCEApplication::getInstance()->systemRequestedQuit();
+        }
+        
     private:
         MainComponent* mainComponent = nullptr;
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainWindow)

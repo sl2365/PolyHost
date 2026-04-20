@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 project(PolyHost VERSION 0.1.0 LANGUAGES CXX)
 
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -9,23 +10,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #   tools\vstsdk2.4\pluginterfaces\vst2.x\aeffect.h
 set(VST2_SDK_PATH "${CMAKE_SOURCE_DIR}/tools/vstsdk2.4")
 
-# ── Fetch JUCE ───────────────────────────────────────────────────────────────
-include(FetchContent)
-
-FetchContent_Declare(
-    JUCE
-    GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
-    GIT_TAG        7.0.12
-)
-FetchContent_MakeAvailable(JUCE)
-
-# ── Fetch clap-juce-extensions (CLAP hosting support) ────────────────────────
-FetchContent_Declare(
-    clap_juce_extensions
-    GIT_REPOSITORY https://github.com/free-audio/clap-juce-extensions.git
-    GIT_TAG        main
-)
-FetchContent_MakeAvailable(clap_juce_extensions)
+add_subdirectory(tools/JUCE)
+# add_subdirectory(tools/clap-juce-extensions)
 
 # ── Application target ────────────────────────────────────────────────────────
 juce_add_gui_app(PolyHost
@@ -59,16 +45,19 @@ endif()
 target_compile_definitions(PolyHost PRIVATE
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
-    JUCE_DISPLAY_SPLASH_SCREEN=0
     JUCE_MODAL_LOOPS_PERMITTED=1
 
     JUCE_PLUGINHOST_VST3=1          # VST3 x64 -- always enabled
-    JUCE_PLUGINHOST_CLAP=1          # CLAP -- via clap-juce-extensions
+#     JUCE_PLUGINHOST_CLAP=1          # CLAP -- via clap-juce-extensions
 
     # VST2 -- enabled automatically if tools\vstsdk2.4 is present
     $<$<BOOL:${VST2_ENABLED}>:JUCE_PLUGINHOST_VST=1>
     $<$<BOOL:${VST2_ENABLED}>:VST2_SDK_ROOT="${VST2_SDK_PATH}">
 )
+
+if(VST2_ENABLED)
+	target_include_directories(PolyHost PRIVATE "${VST2_SDK_PATH}")
+endif()
 
 target_link_libraries(PolyHost
     PRIVATE
@@ -83,7 +72,7 @@ target_link_libraries(PolyHost
         juce::juce_graphics
         juce::juce_gui_basics
         juce::juce_gui_extra
-        clap_juce_extensions
+#         clap_juce_extensions
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_warning_flags

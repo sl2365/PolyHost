@@ -4,27 +4,39 @@
 class AudioEngine;
 
 class PluginTabComponent final : public juce::Component,
-                                  public juce::FileDragAndDropTarget
+                                 public juce::FileDragAndDropTarget,
+                                 public juce::ChangeBroadcaster
 {
 public:
-    enum class SlotType { Synth, FX };
+    enum class SlotType { Empty, Synth, FX };
 
     static juce::Colour colourForType(SlotType t)
     {
-        return t == SlotType::Synth ? juce::Colour(0xFF3A7BD5) : juce::Colour(0xFFE67E22);
+        switch (t)
+        {
+            case SlotType::Synth: return juce::Colour(0xFF3A7BD5);
+            case SlotType::FX:    return juce::Colour(0xFFE67E22);
+            case SlotType::Empty: return juce::Colour(0xFF555555);
+        }
+
+        return juce::Colour(0xFF555555);
     }
 
-    PluginTabComponent(AudioEngine& engine, SlotType type, int slotIndex);
+    PluginTabComponent(AudioEngine& engine, int slotIndex);
     ~PluginTabComponent() override;
 
     bool loadPlugin(const juce::File& pluginFile);
     void clearPlugin();
 
-    bool hasPlugin()   const { return nodeId.isValid(); }
+    bool hasPlugin() const { return nodeId != juce::AudioProcessorGraph::NodeID(); }
     SlotType getType() const { return slotType; }
     int getSlotIndex() const { return slotIndex; }
     juce::AudioProcessorGraph::NodeID getNodeID() const { return nodeId; }
     juce::String getPluginName() const;
+
+    juce::File getPluginFile() const;
+    juce::MemoryBlock getPluginState() const;
+    bool restorePluginState(const juce::MemoryBlock& state);
 
     void resized() override;
     void paint(juce::Graphics& g) override;
@@ -32,17 +44,17 @@ public:
     void filesDropped(const juce::StringArray& files, int x, int y) override;
 
 private:
-    void showPluginEditor();
     static bool isPluginFile(const juce::File& f);
+    void showPluginEditor();
 
     AudioEngine& audioEngine;
-    SlotType slotType;
+    SlotType slotType { SlotType::Empty };
     int slotIndex;
 
     juce::AudioPluginFormatManager formatManager;
     juce::AudioProcessorGraph::NodeID nodeId;
     std::unique_ptr<juce::AudioProcessorEditor> pluginEditor;
-    std::unique_ptr<juce::ResizableWindow> editorWindow;
+    juce::File loadedPluginFile;
 
     juce::TextButton loadButton { "Click to Load Plugin..." };
     juce::Label statusLabel;
