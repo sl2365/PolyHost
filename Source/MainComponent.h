@@ -89,12 +89,23 @@ private:
     juce::Array<PluginReplacementCandidate> findReplacementCandidates(const MissingPluginEntry& entry) const;
     juce::File chooseReplacementCandidate(const MissingPluginEntry& entry,
                                           const juce::Array<PluginReplacementCandidate>& candidates);
+    juce::Array<juce::File> collectPluginFilesInFolder(const juce::File& folder,
+                                                       bool recursive) const;
     int getPluginMatchScore(const MissingPluginEntry& entry,
                             const juce::PluginDescription& desc) const;
     juce::String getExpectedPluginFileName(const MissingPluginEntry& entry) const;
     void showMissingPluginRepairResult(const juce::StringArray& restored,
                                        const juce::StringArray& failed,
                                        const juce::StringArray& skipped);
+    juce::File browseForReplacementPlugin(const MissingPluginEntry& entry,
+                                          const juce::File& startDir) const;
+    bool applyReplacementPlugin(const MissingPluginEntry& entry,
+                                const juce::File& replacementFile);
+    juce::File findReplacementPluginFile(const MissingPluginEntry& entry,
+                                         const juce::File& startDir);
+    juce::String buildMissingPluginRepairSummary(const juce::StringArray& restored,
+                                                 const juce::StringArray& failed,
+                                                 const juce::StringArray& skipped) const;
 
     // Plugin scan folder actions
     void addPluginScanFolder();

@@ -443,19 +443,13 @@ void MainComponent::loadPreset()
     currentPresetFile = file;
     showPresetLoadErrors(loadErrors);
 
-    if (promptToLocateMissingPlugins(unresolvedMissingPlugins))
+    promptToLocateMissingPlugins(unresolvedMissingPlugins);
+
+    juce::MessageManager::callAsync([this]
     {
         isLoadingPreset = false;
-        locateMissingPlugins();
-    }
-    else
-    {
-        juce::MessageManager::callAsync([this]
-        {
-            isLoadingPreset = false;
-            markSessionClean();
-        });
-    }
+        markSessionClean();
+    });
 }
 
 void MainComponent::showPresetLoadErrors(const juce::StringArray& errors)
@@ -495,28 +489,10 @@ bool MainComponent::locateMissingPlugin(MissingPluginEntry& entry)
             startDir = parent;
     }
 
-    juce::File replacementFile = tryAutoLocateReplacement(entry);
+    auto replacementFile = findReplacementPluginFile(entry, startDir);
 
     if (replacementFile == juce::File())
-        replacementFile = tryAutoLocateReplacementByMetadata(entry);
-
-    if (replacementFile == juce::File())
-    {
-        auto candidates = findReplacementCandidates(entry);
-        replacementFile = chooseReplacementCandidate(entry, candidates);
-    }
-
-    if (replacementFile == juce::File())
-    {
-        juce::FileChooser chooser("Locate Plugin: " + entry.pluginName,
-                                  startDir,
-                                  "*.vst3;*.dll;*.clap");
-
-        if (!chooser.browseForFileToOpen())
-            return false;
-
-        replacementFile = chooser.getResult();
-    }
+        return false;
 
     if (!confirmReplacementPlugin(entry, replacementFile))
         return false;
@@ -524,26 +500,7 @@ bool MainComponent::locateMissingPlugin(MissingPluginEntry& entry)
     if (!validateReplacementPluginCompatibility(entry, replacementFile))
         return false;
 
-    if (!juce::isPositiveAndBelow(entry.tabIndex, tabs.getNumTabs()))
-        return false;
-
-    if (auto* tc = getTabComponent(entry.tabIndex))
-    {
-        if (!tc->loadPlugin(replacementFile))
-            return false;
-
-        lastPluginRepairDirectory = replacementFile.getParentDirectory();
-
-        juce::MemoryBlock state;
-        if (state.fromBase64Encoding(entry.pluginStateBase64))
-            tc->restorePluginState(state);
-
-        refreshTabAppearance(entry.tabIndex);
-        markSessionDirty();
-        return true;
-    }
-
-    return false;
+    return applyReplacementPlugin(entry, replacementFile);
 }
 
 void MainComponent::locateMissingPlugins()
@@ -557,27 +514,7 @@ void MainComponent::locateMissingPlugins()
         return;
     }
 
-    juce::StringArray restored;
-    juce::StringArray skipped;
-    juce::Array<MissingPluginEntry> stillMissing;
-
-    for (int i = 0; i < unresolvedMissingPlugins.size(); ++i)
-    {
-        auto entry = unresolvedMissingPlugins.getReference(i);
-
-        if (locateMissingPlugin(entry))
-            restored.add(entry.pluginName);
-        else
-        {
-            skipped.add(entry.pluginName);
-            stillMissing.add(entry);
-        }
-    }
-
-    unresolvedMissingPlugins = stillMissing;
-
-    juce::StringArray failed;
-    showMissingPluginRepairResult(restored, failed, skipped);
+    promptToLocateMissingPlugins(unresolvedMissingPlugins);
 }
 
 bool MainComponent::promptToLocateMissingPlugins(const juce::Array<MissingPluginEntry>& missingPlugins)
@@ -589,6 +526,9 @@ bool MainComponent::promptToLocateMissingPlugins(const juce::Array<MissingPlugin
     juce::StringArray failed;
     juce::StringArray skipped;
 
+    juce::Array<int> resolvedTabIndices;
+    juce::Array<int> skippedTabIndices;
+
     for (int i = 0; i < missingPlugins.size(); ++i)
     {
         auto entry = missingPlugins.getReference(i);
@@ -598,33 +538,41 @@ bool MainComponent::promptToLocateMissingPlugins(const juce::Array<MissingPlugin
         if (action == 0)
         {
             skipped.add(entry.pluginName + " (repair session cancelled)");
+            skippedTabIndices.addIfNotAlreadyThere(entry.tabIndex);
             break;
         }
 
-        if (action == 2) // Skip
+        if (action == 2)
         {
             skipped.add(entry.pluginName);
+            skippedTabIndices.addIfNotAlreadyThere(entry.tabIndex);
             continue;
         }
 
         if (locateMissingPlugin(entry))
+        {
             restored.add(entry.pluginName);
+            resolvedTabIndices.addIfNotAlreadyThere(entry.tabIndex);
+        }
         else
+        {
             failed.add(entry.pluginName);
+        }
     }
 
     unresolvedMissingPlugins.clear();
 
     for (int i = 0; i < missingPlugins.size(); ++i)
     {
-        auto& original = missingPlugins.getReference(i);
+        const auto& original = missingPlugins.getReference(i);
 
-        bool wasRestored = restored.contains(original.pluginName);
-        bool wasSkipped  = skipped.contains(original.pluginName)
-                        || skipped.contains(original.pluginName + " (repair session cancelled)");
+        if (resolvedTabIndices.contains(original.tabIndex))
+            continue;
 
-        if (!wasRestored && !wasSkipped)
-            unresolvedMissingPlugins.add(original);
+        if (skippedTabIndices.contains(original.tabIndex))
+            continue;
+
+        unresolvedMissingPlugins.add(original);
     }
 
     showMissingPluginRepairResult(restored, failed, skipped);
@@ -663,36 +611,7 @@ void MainComponent::showMissingPluginRepairResult(const juce::StringArray& resto
                                                   const juce::StringArray& failed,
                                                   const juce::StringArray& skipped)
 {
-    juce::String message;
-
-    if (!restored.isEmpty())
-    {
-        message += "Restored:\n";
-        for (int i = 0; i < restored.size(); ++i)
-            message += "  - " + restored[i] + "\n";
-        message += "\n";
-    }
-
-    if (!failed.isEmpty())
-    {
-        message += "Failed:\n";
-        for (int i = 0; i < failed.size(); ++i)
-            message += "  - " + failed[i] + "\n";
-        message += "\n";
-    }
-
-    if (!skipped.isEmpty())
-    {
-        message += "Not repaired:\n";
-        for (int i = 0; i < skipped.size(); ++i)
-            message += "  - " + skipped[i] + "\n";
-        message += "\n";
-    }
-
-    if (unresolvedMissingPlugins.isEmpty())
-        message += "All missing plugins have been resolved.\n";
-    else
-        message += "Remaining unresolved plugins: " + juce::String(unresolvedMissingPlugins.size()) + "\n";
+    auto message = buildMissingPluginRepairSummary(restored, failed, skipped);
 
     if (!restored.isEmpty())
     {
@@ -708,22 +627,22 @@ void MainComponent::showMissingPluginRepairResult(const juce::StringArray& resto
                 markSessionClean();
             });
 
-            message += "\nPreset was saved automatically with repaired plugin paths.";
+            message += "\n\nPreset was saved automatically with repaired plugin paths.";
 
             juce::AlertWindow::showMessageBoxAsync(
                 juce::AlertWindow::InfoIcon,
                 "Missing Plugin Repair Complete",
-                message.trimEnd());
+                message);
 
             return;
         }
 
-        message += "\nSave the preset now to store repaired plugin paths.";
+        message += "\n\nSave the preset now to store repaired plugin paths.";
 
         auto saveNow = juce::AlertWindow::showOkCancelBox(
             juce::AlertWindow::InfoIcon,
             "Missing Plugin Repair Complete",
-            message.trimEnd(),
+            message,
             "Save Now",
             "Later");
 
@@ -741,7 +660,7 @@ void MainComponent::showMissingPluginRepairResult(const juce::StringArray& resto
     juce::AlertWindow::showMessageBoxAsync(
         juce::AlertWindow::InfoIcon,
         "Missing Plugin Repair Complete",
-        message.trimEnd());
+        message);
 }
 
 juce::File MainComponent::tryAutoLocateReplacementByMetadata(const MissingPluginEntry& entry) const
@@ -749,18 +668,7 @@ juce::File MainComponent::tryAutoLocateReplacementByMetadata(const MissingPlugin
     if (!lastPluginRepairDirectory.isDirectory())
         return {};
 
-    juce::Array<juce::File> candidates;
-
-    auto addMatches = [&](const juce::String& pattern)
-    {
-        auto files = lastPluginRepairDirectory.findChildFiles(juce::File::findFiles, false, pattern);
-        for (auto& f : files)
-            candidates.addIfNotAlreadyThere(f);
-    };
-
-    addMatches("*.vst3");
-    addMatches("*.dll");
-    addMatches("*.clap");
+    auto candidates = collectPluginFilesInFolder(lastPluginRepairDirectory, false);
 
     juce::Array<juce::File> strongMatches;
 
@@ -1210,18 +1118,7 @@ MainComponent::findReplacementCandidates(const MissingPluginEntry& entry) const
         if (!folder.isDirectory())
             continue;
 
-        juce::Array<juce::File> files;
-
-        auto addMatches = [&](const juce::String& pattern)
-        {
-            auto matches = folder.findChildFiles(juce::File::findFiles, true, pattern);
-            for (auto& f : matches)
-                files.addIfNotAlreadyThere(f);
-        };
-
-        addMatches("*.vst3");
-        addMatches("*.dll");
-        addMatches("*.clap");
+        auto files = collectPluginFilesInFolder(folder, true);
 
         for (auto& file : files)
         {
@@ -1320,5 +1217,123 @@ int MainComponent::promptForMissingPluginRepairAction(const MissingPluginEntry& 
         "Repair",
         "Skip",
         "Cancel");
+}
+
+juce::Array<juce::File> MainComponent::collectPluginFilesInFolder(const juce::File& folder,
+                                                                  bool recursive) const
+{
+    juce::Array<juce::File> files;
+
+    if (!folder.isDirectory())
+        return files;
+
+    auto addMatches = [&](const juce::String& pattern)
+    {
+        auto matches = folder.findChildFiles(juce::File::findFiles, recursive, pattern);
+        for (auto& f : matches)
+            files.addIfNotAlreadyThere(f);
+    };
+
+    addMatches("*.vst3");
+    addMatches("*.dll");
+    addMatches("*.clap");
+
+    return files;
+}
+
+juce::String MainComponent::buildMissingPluginRepairSummary(const juce::StringArray& restored,
+                                                            const juce::StringArray& failed,
+                                                            const juce::StringArray& skipped) const
+{
+    juce::String message;
+
+    if (!restored.isEmpty())
+    {
+        message += "Restored:\n";
+        for (int i = 0; i < restored.size(); ++i)
+            message += "  - " + restored[i] + "\n";
+        message += "\n";
+    }
+
+    if (!failed.isEmpty())
+    {
+        message += "Failed:\n";
+        for (int i = 0; i < failed.size(); ++i)
+            message += "  - " + failed[i] + "\n";
+        message += "\n";
+    }
+
+    if (!skipped.isEmpty())
+    {
+        message += "Not repaired:\n";
+        for (int i = 0; i < skipped.size(); ++i)
+            message += "  - " + skipped[i] + "\n";
+        message += "\n";
+    }
+
+    if (unresolvedMissingPlugins.isEmpty())
+        message += "All missing plugins have been resolved.\n";
+    else
+        message += "Remaining unresolved plugins: " + juce::String(unresolvedMissingPlugins.size()) + "\n";
+
+    return message.trimEnd();
+}
+
+juce::File MainComponent::browseForReplacementPlugin(const MissingPluginEntry& entry,
+                                                     const juce::File& startDir) const
+{
+    juce::FileChooser chooser("Locate Plugin: " + entry.pluginName,
+                              startDir,
+                              "*.vst3;*.dll;*.clap");
+
+    if (!chooser.browseForFileToOpen())
+        return {};
+
+    return chooser.getResult();
+}
+
+bool MainComponent::applyReplacementPlugin(const MissingPluginEntry& entry,
+                                           const juce::File& replacementFile)
+{
+    if (!juce::isPositiveAndBelow(entry.tabIndex, tabs.getNumTabs()))
+        return false;
+
+    if (auto* tc = getTabComponent(entry.tabIndex))
+    {
+        if (!tc->loadPlugin(replacementFile))
+            return false;
+
+        lastPluginRepairDirectory = replacementFile.getParentDirectory();
+
+        juce::MemoryBlock state;
+        if (state.fromBase64Encoding(entry.pluginStateBase64))
+            tc->restorePluginState(state);
+
+        refreshTabAppearance(entry.tabIndex);
+        markSessionDirty();
+        return true;
+    }
+
+    return false;
+}
+
+juce::File MainComponent::findReplacementPluginFile(const MissingPluginEntry& entry,
+                                                    const juce::File& startDir)
+{
+    juce::File replacementFile = tryAutoLocateReplacement(entry);
+
+    if (replacementFile == juce::File())
+        replacementFile = tryAutoLocateReplacementByMetadata(entry);
+
+    if (replacementFile == juce::File())
+    {
+        auto candidates = findReplacementCandidates(entry);
+        replacementFile = chooseReplacementCandidate(entry, candidates);
+    }
+
+    if (replacementFile == juce::File())
+        replacementFile = browseForReplacementPlugin(entry, startDir);
+
+    return replacementFile;
 }
 
