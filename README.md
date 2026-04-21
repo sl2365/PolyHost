@@ -21,6 +21,7 @@ Fully portable: stores all settings next to the exe, touches nothing else on the
 
 ## Folder Structure
 
+```
 PolyHost\                        ← your project root
 │
 ├── build.bat                    ← THE build script (run this)
@@ -49,7 +50,7 @@ PolyHost\                        ← your project root
 └── [PolyHost.exe]\
     └── Settings\                ← created at runtime, settings stored here
         └── polyhost.xml
-
+```
 ## Build Setup (one-time)
 
 ### 1. Visual Studio 2022 Community (free)
