@@ -21,28 +21,34 @@ Fully portable: stores all settings next to the exe, touches nothing else on the
 
 ## Folder Structure
 
-PolyHost\
+PolyHost\                        ← your project root
 │
-├── build.bat              <- run this to compile
+├── build.bat                    ← THE build script (run this)
 ├── CMakeLists.txt
 ├── README.md
 │
-├── Source\                <- edit in CudaText
-    ├──  Main.cpp
-    ├──  MainComponent.h/.cpp
-    ├──  PluginTabComponent.h/.cpp
-    ├──  AudioEngine.h/.cpp
-    ├──  MidiEngine.h/.cpp
-    ├──  AppSettings.h/.cpp
+├── Source\
+│   ├── Main.cpp
+│   ├── MainComponent.h / .cpp
+│   ├── PluginTabComponent.h / .cpp
+│   ├── AudioEngine.h / .cpp
+│   ├── MidiEngine.h / .cpp
+│   └── AppSettings.h / .cpp
 │
 ├── tools\
-    ├──  cmake\               <- extract CMake ZIP here
-        bin\
-          cmake.exe
+│   ├── cmake\                   ← extract cmake-3.x.x-windows-x86_64.zip HERE
+│   │   └── bin\
+│   │       └── cmake.exe
+│   │
+│   └── vstsdk2.4\      ← drop your SDK here
+│       └── pluginterfaces\
+│           └── vst2.x\
+│               └── aeffect.h   ← CMake checks for this file
 │
-├── dist\                  <- PolyHost.exe appears here after build
-      Settings\            <- created automatically at first run
-        polyhost.xml       <- all settings stored here
+├── dist\                        ← build output — PolyHost.exe lands here
+└── [PolyHost.exe]\
+    └── Settings\                ← created at runtime, settings stored here
+        └── polyhost.xml
 
 ## Build Setup (one-time)
 
