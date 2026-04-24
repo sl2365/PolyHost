@@ -89,16 +89,23 @@ private:
             TextLabel
         };
 
+        bool isVisuallyActive() const
+        {
+            return isActiveProvider ? isActiveProvider() : false;
+        }
+
         StyledToolbarButton(int itemId,
                             const juce::String& tooltipText,
                             const juce::String& contentText,
                             ContentType contentTypeIn,
-                            int preferredWidthIn)
+                            int preferredWidthIn,
+                            std::function<bool()> isActiveProviderIn = {})
             : juce::ToolbarButton(itemId, "", nullptr, nullptr),
               tooltip(tooltipText),
               content(contentText),
               contentType(contentTypeIn),
-              preferredWidth(preferredWidthIn)
+              preferredWidth(preferredWidthIn),
+              isActiveProvider(std::move(isActiveProviderIn))
         {
             setTooltip(tooltip);
             setWantsKeyboardFocus(false);
@@ -122,7 +129,7 @@ private:
 
             auto base = juce::Colour(0xFF2A3142);
 
-            if (getToggleState())
+            if (isVisuallyActive())
                 base = juce::Colour(0xFF3A7BD5);
             else if (isMouseDown)
                 base = base.darker(0.15f);
@@ -150,8 +157,8 @@ private:
             paintButtonArea(g, bounds.getWidth(), bounds.getHeight(), isOver, isDown);
 
             auto drawArea = contentArea.isEmpty() ? bounds : contentArea;
-            g.setColour(getToggleState() ? juce::Colours::white
-                                         : juce::Colours::lightgrey);
+            g.setColour(isVisuallyActive() ? juce::Colours::white
+                                           : juce::Colours::lightgrey);
 
             if (contentType == ContentType::IconGlyph)
             {
@@ -179,6 +186,7 @@ private:
         ContentType contentType;
         int preferredWidth = 32;
         juce::Rectangle<int> contentArea;
+        std::function<bool()> isActiveProvider;
     };
 
     class TabBarLookAndFeel final : public juce::LookAndFeel_V4

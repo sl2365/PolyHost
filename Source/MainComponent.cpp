@@ -2349,7 +2349,8 @@ juce::ToolbarItemComponent* MainComponent::createItem(int itemId)
                                                "Toggle Routing View",
                                                getToolbarIconGlyph(itemId),
                                                StyledToolbarButton::ContentType::IconGlyph,
-                                               32);
+                                               32,
+                                               [this] { return showingRoutingView; });
 
         button->onClick = [this, button]
         {
@@ -2376,12 +2377,13 @@ void MainComponent::setRoutingViewVisible(bool shouldShow)
     routingView.setVisible(showingRoutingView);
 
     if (auto* item = toolbar.getItemComponent(toolbarRoutingToggle))
-        if (auto* button = dynamic_cast<juce::Button*>(item))
-        {
-            button->setToggleState(showingRoutingView, juce::dontSendNotification);
-            button->repaint();
-        }
+    {
+        item->setToggleState(showingRoutingView, juce::dontSendNotification);
+        item->repaint();
+    }
 
+    toolbar.repaint();
+    repaint();
     resized();
 }
 
