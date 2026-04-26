@@ -32,7 +32,7 @@ target_sources(PolyHost PRIVATE
     Source/AppSettings.cpp
     Source/RoutingView.cpp
     Source/SessionManager.cpp
-    Source/TransportController.cpp
+    Source/StandaloneTempoSupport.cpp
 )
 
 # ── Detect whether the portable VST2 SDK is present ──────────────────────────
