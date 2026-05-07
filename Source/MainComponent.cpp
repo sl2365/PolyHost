@@ -131,6 +131,206 @@ namespace
         std::function<juce::StringArray()> getAssignedIdentifiers;
     };
 
+    class PointerControlSettingsComponent final : public juce::Component
+    {
+    public:
+        explicit PointerControlSettingsComponent(AppSettings& settingsIn)
+            : settings(settingsIn)
+        {
+            addAndMakeVisible(xCcLabel);
+            xCcLabel.setText("X CC", juce::dontSendNotification);
+            xCcLabel.setJustificationType(juce::Justification::centredRight);
+
+            addAndMakeVisible(yCcLabel);
+            yCcLabel.setText("Y CC", juce::dontSendNotification);
+            yCcLabel.setJustificationType(juce::Justification::centredRight);
+
+            addAndMakeVisible(adjustCcLabel);
+            adjustCcLabel.setText("Adjust CC", juce::dontSendNotification);
+            adjustCcLabel.setJustificationType(juce::Justification::centredRight);
+
+            addAndMakeVisible(xWeightLabel);
+            xWeightLabel.setText("X Weight", juce::dontSendNotification);
+            xWeightLabel.setJustificationType(juce::Justification::centredRight);
+
+            addAndMakeVisible(yWeightLabel);
+            yWeightLabel.setText("Y Weight", juce::dontSendNotification);
+            yWeightLabel.setJustificationType(juce::Justification::centredRight);
+
+            addAndMakeVisible(transparencyLabel);
+            transparencyLabel.setText("Overlay Transparency", juce::dontSendNotification);
+            transparencyLabel.setJustificationType(juce::Justification::centredRight);
+
+            addAndMakeVisible(pointSizeLabel);
+            pointSizeLabel.setText("Point Size", juce::dontSendNotification);
+            pointSizeLabel.setJustificationType(juce::Justification::centredRight);
+
+            addAndMakeVisible(pointColourLabel);
+            pointColourLabel.setText("Point RGB", juce::dontSendNotification);
+            pointColourLabel.setJustificationType(juce::Justification::centredRight);
+
+            addAndMakeVisible(previewColourLabel);
+            previewColourLabel.setText("Preview RGB", juce::dontSendNotification);
+            previewColourLabel.setJustificationType(juce::Justification::centredRight);
+
+            configureCcEditor(xCcEditor, settings.getPointerControlXccNumber());
+            configureCcEditor(yCcEditor, settings.getPointerControlYccNumber());
+            configureCcEditor(adjustCcEditor, settings.getPointerControlAdjustCcNumber());
+
+            configureWeightEditor(xWeightEditor, settings.getPointerControlXSnapWeight());
+            configureWeightEditor(yWeightEditor, settings.getPointerControlYSnapWeight());
+
+            configureIntegerEditor(transparencyEditor, settings.getPointerControlOverlayTransparency());
+            configureIntegerEditor(pointSizeEditor, settings.getPointerControlPointSize());
+
+            auto pointColour = settings.getPointerControlPointColour();
+            auto previewColour = settings.getPointerControlPreviewColour();
+
+            configureIntegerEditor(pointColourREditor, (int) pointColour.getRed());
+            configureIntegerEditor(pointColourGEditor, (int) pointColour.getGreen());
+            configureIntegerEditor(pointColourBEditor, (int) pointColour.getBlue());
+
+            configureIntegerEditor(previewColourREditor, (int) previewColour.getRed());
+            configureIntegerEditor(previewColourGEditor, (int) previewColour.getGreen());
+            configureIntegerEditor(previewColourBEditor, (int) previewColour.getBlue());
+
+            addAndMakeVisible(xCcEditor);
+            addAndMakeVisible(yCcEditor);
+            addAndMakeVisible(adjustCcEditor);
+            addAndMakeVisible(xWeightEditor);
+            addAndMakeVisible(yWeightEditor);
+            addAndMakeVisible(transparencyEditor);
+            addAndMakeVisible(pointSizeEditor);
+
+            addAndMakeVisible(pointColourREditor);
+            addAndMakeVisible(pointColourGEditor);
+            addAndMakeVisible(pointColourBEditor);
+
+            addAndMakeVisible(previewColourREditor);
+            addAndMakeVisible(previewColourGEditor);
+            addAndMakeVisible(previewColourBEditor);
+        }
+
+        void resized() override
+        {
+            auto area = getLocalBounds().reduced(12);
+            constexpr int rowHeight = 28;
+            constexpr int rowGap = 8;
+            constexpr int labelWidth = 150;
+            constexpr int fieldWidth = 80;
+            constexpr int rgbFieldWidth = 52;
+
+            auto layoutRow = [&](juce::Label& label, juce::Component& editor)
+            {
+                auto row = area.removeFromTop(rowHeight);
+                label.setBounds(row.removeFromLeft(labelWidth));
+                editor.setBounds(row.removeFromLeft(fieldWidth));
+                area.removeFromTop(rowGap);
+            };
+
+            layoutRow(xCcLabel, xCcEditor);
+            layoutRow(yCcLabel, yCcEditor);
+            layoutRow(adjustCcLabel, adjustCcEditor);
+            layoutRow(xWeightLabel, xWeightEditor);
+            layoutRow(yWeightLabel, yWeightEditor);
+            layoutRow(transparencyLabel, transparencyEditor);
+            layoutRow(pointSizeLabel, pointSizeEditor);
+
+            {
+                auto row = area.removeFromTop(rowHeight);
+                pointColourLabel.setBounds(row.removeFromLeft(labelWidth));
+                pointColourREditor.setBounds(row.removeFromLeft(rgbFieldWidth));
+                row.removeFromLeft(6);
+                pointColourGEditor.setBounds(row.removeFromLeft(rgbFieldWidth));
+                row.removeFromLeft(6);
+                pointColourBEditor.setBounds(row.removeFromLeft(rgbFieldWidth));
+                area.removeFromTop(rowGap);
+            }
+
+            {
+                auto row = area.removeFromTop(rowHeight);
+                previewColourLabel.setBounds(row.removeFromLeft(labelWidth));
+                previewColourREditor.setBounds(row.removeFromLeft(rgbFieldWidth));
+                row.removeFromLeft(6);
+                previewColourGEditor.setBounds(row.removeFromLeft(rgbFieldWidth));
+                row.removeFromLeft(6);
+                previewColourBEditor.setBounds(row.removeFromLeft(rgbFieldWidth));
+            }
+        }
+
+        void apply()
+        {
+            settings.setPointerControlXccNumber(parseInt(xCcEditor.getText(), 76, 0, 127));
+            settings.setPointerControlYccNumber(parseInt(yCcEditor.getText(), 77, 0, 127));
+            settings.setPointerControlAdjustCcNumber(parseInt(adjustCcEditor.getText(), 78, 0, 127));
+
+            settings.setPointerControlXSnapWeight(parseFloat(xWeightEditor.getText(), 1.0f, 0.001f, 100.0f));
+            settings.setPointerControlYSnapWeight(parseFloat(yWeightEditor.getText(), 0.20f, 0.001f, 100.0f));
+
+            settings.setPointerControlOverlayTransparency(parseInt(transparencyEditor.getText(), 10, 0, 40));
+            settings.setPointerControlPointSize(parseInt(pointSizeEditor.getText(), 4, 3, 15));
+
+            settings.setPointerControlPointColour(juce::Colour::fromRGB(
+                (juce::uint8) parseInt(pointColourREditor.getText(), 80, 0, 255),
+                (juce::uint8) parseInt(pointColourGEditor.getText(), 255, 0, 255),
+                (juce::uint8) parseInt(pointColourBEditor.getText(), 120, 0, 255)));
+
+            settings.setPointerControlPreviewColour(juce::Colour::fromRGB(
+                (juce::uint8) parseInt(previewColourREditor.getText(), 255, 0, 255),
+                (juce::uint8) parseInt(previewColourGEditor.getText(), 210, 0, 255),
+                (juce::uint8) parseInt(previewColourBEditor.getText(), 80, 0, 255)));
+        }
+
+    private:
+        static void configureCcEditor(juce::TextEditor& ed, int value)
+        {
+            configureIntegerEditor(ed, value);
+            ed.setInputRestrictions(3, "0123456789");
+        }
+
+        static void configureWeightEditor(juce::TextEditor& ed, float value)
+        {
+            ed.setText(juce::String(value, 3), juce::dontSendNotification);
+            ed.setInputRestrictions(0, "0123456789.");
+        }
+
+        static void configureIntegerEditor(juce::TextEditor& ed, int value)
+        {
+            ed.setText(juce::String(value), juce::dontSendNotification);
+            ed.setInputRestrictions(3, "0123456789");
+        }
+
+        static int parseInt(const juce::String& text, int fallback, int minValue, int maxValue)
+        {
+            auto value = text.getIntValue();
+            if (text.trim().isEmpty())
+                value = fallback;
+
+            return juce::jlimit(minValue, maxValue, value);
+        }
+
+        static float parseFloat(const juce::String& text, float fallback, float minValue, float maxValue)
+        {
+            auto trimmed = text.trim();
+            auto value = trimmed.isEmpty() ? fallback : trimmed.getFloatValue();
+            return juce::jlimit(minValue, maxValue, value);
+        }
+
+        AppSettings& settings;
+
+        juce::Label xCcLabel, yCcLabel, adjustCcLabel;
+        juce::Label xWeightLabel, yWeightLabel;
+        juce::Label transparencyLabel, pointSizeLabel;
+        juce::Label pointColourLabel, previewColourLabel;
+
+        juce::TextEditor xCcEditor, yCcEditor, adjustCcEditor;
+        juce::TextEditor xWeightEditor, yWeightEditor;
+        juce::TextEditor transparencyEditor, pointSizeEditor;
+
+        juce::TextEditor pointColourREditor, pointColourGEditor, pointColourBEditor;
+        juce::TextEditor previewColourREditor, previewColourGEditor, previewColourBEditor;
+    };
+
     class AboutDialogContent final : public juce::Component
     {
     public:
@@ -195,11 +395,14 @@ namespace
             : owner(ownerIn)
         {
             setInterceptsMouseClicks(true, true);
+            setWantsKeyboardFocus(false);
+            setMouseClickGrabsKeyboardFocus(false);
         }
 
         void paint(juce::Graphics& g) override
         {
-            g.fillAll(juce::Colours::black.withAlpha(0.10f));
+            const float overlayAlpha = (float) owner.getSettings().getPointerControlOverlayTransparency() / 100.0f;
+            g.fillAll(juce::Colours::black.withAlpha(overlayAlpha));
 
             auto bounds = getLocalBounds();
             auto banner = bounds.removeFromTop(24);
@@ -211,37 +414,141 @@ namespace
             g.setFont(juce::Font(juce::FontOptions(14.0f, juce::Font::bold)));
             g.drawText("Pointer Control Edit Mode Enabled",
                        banner.reduced(8, 0),
-                       juce::Justification::centredLeft);
+                       juce::Justification::centred);
 
             if (auto* tc = owner.getSettingsSafeCurrentTabForOverlay())
             {
                 const auto& points = tc->getPointerJumpPoints();
 
-                g.setColour(juce::Colours::limegreen);
+                g.setColour(owner.getSettings().getPointerControlPointColour());
 
                 for (int i = 0; i < points.size(); ++i)
                 {
                     const auto& point = points.getReference(i);
-                    auto r = juce::Rectangle<float>(point.x - 2.0f,
-                                                    point.y - 2.0f,
-                                                    4.0f,
-                                                    4.0f);
-                    g.fillEllipse(r);
+                    const float pointSize = (float) owner.getSettings().getPointerControlPointSize();
+                    const float halfSize = pointSize * 0.5f;
+
+                    auto r = juce::Rectangle<float>(point.x - halfSize,
+                                                    point.y - halfSize,
+                                                    pointSize,
+                                                    pointSize);
+                    g.fillRect(r);
                 }
+            }
+
+            if (previewActive)
+            {
+                const float pointSize = (float) owner.getSettings().getPointerControlPointSize();
+                const float previewSize = pointSize + 2.0f;
+                const float previewHalfSize = previewSize * 0.5f;
+
+                g.setColour(owner.getSettings().getPointerControlPreviewColour().withAlpha(0.9f));
+
+                auto previewRect = juce::Rectangle<float>(previewPosition.x - previewHalfSize,
+                                                          previewPosition.y - previewHalfSize,
+                                                          previewSize,
+                                                          previewSize);
+
+                g.fillRect(previewRect);
             }
         }
 
         void mouseDown(const juce::MouseEvent& event) override
         {
-            if (auto* tc = owner.getSettingsSafeCurrentTabForOverlay())
+            auto* tc = owner.getSettingsSafeCurrentTabForOverlay();
+
+            if (tc == nullptr)
+                return;
+
+            constexpr float hitRadius = 6.0f;
+
+            mouseDownPosition = event.position;
+            previewPosition = event.position;
+            previewActive = false;
+            pendingDeletePointIndex = -1;
+
+            if (event.mods.isRightButtonDown())
             {
-                tc->addPointerJumpPoint(event.position);
+                juce::PopupMenu menu;
+                menu.addItem(1, "Clear all points for this tab");
+
+                menu.showMenuAsync(juce::PopupMenu::Options(),
+                                   [tc, this](int result)
+                                   {
+                                       if (result == 1)
+                                       {
+                                           tc->clearPointerJumpPoints();
+                                           repaint();
+                                       }
+                                   });
+                return;
+            }
+
+            if (event.mods.isLeftButtonDown())
+            {
+                pendingDeletePointIndex = tc->findPointerJumpPointAt(event.position, hitRadius);
+                previewActive = true;
                 repaint();
             }
         }
 
+        void mouseDrag(const juce::MouseEvent& event) override
+        {
+            if (!previewActive)
+                return;
+
+            previewPosition = event.position;
+            repaint();
+        }
+
+        void mouseUp(const juce::MouseEvent& event) override
+        {
+            auto* tc = owner.getSettingsSafeCurrentTabForOverlay();
+
+            if (tc == nullptr)
+            {
+                previewActive = false;
+                pendingDeletePointIndex = -1;
+                repaint();
+                return;
+            }
+
+            constexpr float hitRadius = 6.0f;
+
+            if (event.mods.isLeftButtonDown() || previewActive)
+            {
+                const auto releasePosition = event.position;
+
+                if (pendingDeletePointIndex >= 0)
+                {
+                    const int releaseIndex = tc->findPointerJumpPointAt(releasePosition, hitRadius);
+
+                    if (releaseIndex == pendingDeletePointIndex)
+                    {
+                        tc->removePointerJumpPointAtIndex(releaseIndex);
+                    }
+                    else
+                    {
+                        tc->addPointerJumpPoint(releasePosition);
+                    }
+                }
+                else
+                {
+                    tc->addPointerJumpPoint(releasePosition);
+                }
+            }
+
+            previewActive = false;
+            pendingDeletePointIndex = -1;
+            repaint();
+        }
+
     private:
         MainComponent& owner;
+        bool previewActive = false;
+        juce::Point<float> previewPosition;
+        int pendingDeletePointIndex = -1;
+        juce::Point<float> mouseDownPosition;
     };
 }
 
@@ -285,6 +592,8 @@ public:
         setOpaque(false);
         setResizable(false, false);
         setAlwaysOnTop(true);
+        setWantsKeyboardFocus(false);
+        setMouseClickGrabsKeyboardFocus(false);
         setTitleBarHeight(0);
         setContentOwned(new PointerEditOverlayContent(owner), true);
     }
@@ -485,6 +794,9 @@ MainComponent::MainComponent()
 
     refreshRoutingView();
 
+    pointerControl.setSnapWeights(settings.getPointerControlXSnapWeight(),
+                                  settings.getPointerControlYSnapWeight());
+
     auto enabledMidiDeviceIdentifiers = settings.getEnabledMidiDeviceIdentifiers();
 
     for (auto& identifier : enabledMidiDeviceIdentifiers)
@@ -521,22 +833,21 @@ MainComponent::MainComponent()
             const int cc = incoming.message.getControllerNumber();
             const int value = incoming.message.getControllerValue();
 
-            // Temporary fixed CC mapping for first test:
-            // CC 72 = pan X
-            // CC 73 = pan Y
-            // CC 74 = wheel adjust
-
             refreshPointerControlTarget();
 
-            if (cc == 72)
+            const int pointerXcc = settings.getPointerControlXccNumber();
+            const int pointerYcc = settings.getPointerControlYccNumber();
+            const int pointerAdjustCc = settings.getPointerControlAdjustCcNumber();
+
+            if (cc == pointerXcc)
             {
                 pointerControl.panX(value);
             }
-            else if (cc == 73)
+            else if (cc == pointerYcc)
             {
                 pointerControl.panY(value);
             }
-            else if (cc == 74)
+            else if (cc == pointerAdjustCc)
             {
                 if (lastPointerAdjustCcValue >= 0)
                 {
@@ -578,6 +889,8 @@ MainComponent::MainComponent()
             audioEngine.queueMidiToNodes(incoming.message, targetNodeIds);
     };
 
+    startTimerHz(5);
+
     statusBar.setColour(juce::Label::backgroundColourId, juce::Colour(0xFF0F3460));
     statusBar.setColour(juce::Label::textColourId, juce::Colours::lightgrey);
     statusBar.setJustificationType(juce::Justification::centredLeft);
@@ -598,6 +911,7 @@ MainComponent::MainComponent()
 MainComponent::~MainComponent()
 {
     destroyPointerEditOverlay();
+    stopTimer();
     tabs.getTabbedButtonBar().removeMouseListener(&tabBarMouseListener);
     tabs.getTabbedButtonBar().removeChangeListener(this);
     tabs.getTabbedButtonBar().setLookAndFeel(nullptr);
@@ -737,6 +1051,9 @@ void MainComponent::applySessionData(const SessionData& session,
                     point.y = sessionPoint.y;
                     jumpPoints.add(point);
                 }
+
+                DebugLog::write("[PointerControl] applySessionData: tab " + juce::String(i)
+                                + " restoring " + juce::String(jumpPoints.size()) + " point(s)");
 
                 tc->setPointerJumpPoints(jumpPoints);
             }
@@ -1299,6 +1616,12 @@ bool MainComponent::isPointerControlEditModeEnabled() const
     return pointerControlEditModeEnabled;
 }
 
+void MainComponent::hidePointerEditOverlay()
+{
+    if (pointerEditOverlayWindow != nullptr)
+        pointerEditOverlayWindow->setVisible(false);
+}
+
 void MainComponent::destroyPointerEditOverlay()
 {
     if (pointerEditOverlayWindow != nullptr)
@@ -1316,11 +1639,20 @@ void MainComponent::updatePointerEditOverlay()
         return;
     }
 
+    auto* thisWindow = findParentComponentOfClass<juce::TopLevelWindow>();
+    auto* activeWindow = juce::TopLevelWindow::getActiveTopLevelWindow();
+
+    if (thisWindow == nullptr || activeWindow != thisWindow)
+    {
+        hidePointerEditOverlay();
+        return;
+    }
+
     auto* tc = getTabComponent(tabs.getCurrentTabIndex());
 
     if (tc == nullptr || !tc->isShowing())
     {
-        destroyPointerEditOverlay();
+        hidePointerEditOverlay();
         return;
     }
 
@@ -1328,17 +1660,28 @@ void MainComponent::updatePointerEditOverlay()
 
     if (screenBounds.isEmpty())
     {
-        destroyPointerEditOverlay();
+        hidePointerEditOverlay();
         return;
     }
+
+    const bool wasVisible = (pointerEditOverlayWindow != nullptr && pointerEditOverlayWindow->isVisible());
 
     if (pointerEditOverlayWindow == nullptr)
         pointerEditOverlayWindow = std::make_unique<PointerEditOverlayWindow>(*this);
 
     pointerEditOverlayWindow->setBounds(screenBounds);
     pointerEditOverlayWindow->setVisible(true);
-    pointerEditOverlayWindow->toFront(true);
+
+    if (!wasVisible)
+        pointerEditOverlayWindow->toFront(false);
+
     pointerEditOverlayWindow->refresh();
+}
+
+void MainComponent::timerCallback()
+{
+    if (pointerControlEditModeEnabled)
+        updatePointerEditOverlay();
 }
 
 void MainComponent::handleCurrentTabChanged()
@@ -1575,6 +1918,7 @@ juce::PopupMenu MainComponent::getMenuForIndex(int index, const juce::String&)
                          true,
                          settings.getAutoSaveAfterPluginRepair());
             menu.addSeparator();
+            menu.addItem(menuPointerControlSettings, "Pointer Control Settings...");
             menu.addItem(502, "Add Plugin Scan Folder...");
             menu.addItem(503, "Show Plugin Scan Folders");
             menu.addItem(504, "Clear Plugin Scan Folders",
@@ -1759,6 +2103,9 @@ void MainComponent::menuItemSelected(int itemId, int)
 
         case 501:
             settings.setAutoSaveAfterPluginRepair(!settings.getAutoSaveAfterPluginRepair());
+            break;
+        case menuPointerControlSettings:
+            showPointerControlSettingsDialog();
             break;
         case 502: addPluginScanFolder(); break;
         case 503: showPluginScanFolders(); break;
@@ -3014,6 +3361,7 @@ bool MainComponent::clearTabAt(int tabIndex)
     {
         tc->clearSavedWindowBounds();
         tc->clearPlugin();
+        tc->clearPointerJumpPoints();
         refreshTabAppearance(tabIndex);
         refreshRoutingView();
         unresolvedMissingPlugins.clear();
@@ -3069,7 +3417,10 @@ void MainComponent::removeTabAt(int tabIndex)
         return;
 
     if (auto* tc = getTabComponent(tabIndex))
+    {
         tc->removeChangeListener(this);
+        tc->clearPointerJumpPoints();
+    }
 
     pluginTabs.remove(tabIndex, true);
 
@@ -4051,7 +4402,77 @@ void MainComponent::refreshPointerControlTarget()
     }
 
     pointerControl.setTargetScreenBounds(targetBounds);
+    pointerControl.setSnapWeights(settings.getPointerControlXSnapWeight(),
+                                  settings.getPointerControlYSnapWeight());
 
     const auto& jumpPoints = tc->getPointerJumpPoints();
     pointerControl.setJumpPoints(jumpPoints, targetBounds);
 }
+
+void MainComponent::showPointerControlSettingsDialog()
+{
+    class PointerControlSettingsDialog final : public juce::Component
+    {
+    public:
+        PointerControlSettingsDialog(MainComponent& ownerIn)
+            : owner(ownerIn), settingsComponent(ownerIn.getSettings())
+        {
+            addAndMakeVisible(settingsComponent);
+            addAndMakeVisible(okButton);
+            addAndMakeVisible(cancelButton);
+
+            okButton.setButtonText("OK");
+            cancelButton.setButtonText("Cancel");
+
+            okButton.onClick = [this]
+            {
+                settingsComponent.apply();
+                owner.pointerControl.setSnapWeights(owner.getSettings().getPointerControlXSnapWeight(),
+                                                    owner.getSettings().getPointerControlYSnapWeight());
+                owner.refreshPointerControlTarget();
+                owner.updatePointerEditOverlay();
+
+                if (auto* dw = findParentComponentOfClass<juce::DialogWindow>())
+                    dw->exitModalState(1);
+            };
+
+            cancelButton.onClick = [this]
+            {
+                if (auto* dw = findParentComponentOfClass<juce::DialogWindow>())
+                    dw->exitModalState(0);
+            };
+        }
+
+        void resized() override
+        {
+            auto area = getLocalBounds().reduced(12);
+            auto buttonRow = area.removeFromBottom(36);
+
+            cancelButton.setBounds(buttonRow.removeFromRight(100));
+            buttonRow.removeFromRight(8);
+            okButton.setBounds(buttonRow.removeFromRight(100));
+
+            area.removeFromBottom(8);
+            settingsComponent.setBounds(area);
+        }
+
+    private:
+        MainComponent& owner;
+        PointerControlSettingsComponent settingsComponent;
+        juce::TextButton okButton, cancelButton;
+    };
+
+    juce::DialogWindow::LaunchOptions options;
+    options.content.setOwned(new PointerControlSettingsDialog(*this));
+    options.dialogTitle = "Pointer Control Settings";
+    options.dialogBackgroundColour = juce::Colour(0xFF1E1E1E);
+    options.escapeKeyTriggersCloseButton = true;
+    options.useNativeTitleBar = true;
+    options.resizable = false;
+    options.componentToCentreAround = this;
+
+    auto* dialog = options.launchAsync();
+    if (dialog != nullptr)
+        dialog->setSize(460, 430);
+}
+

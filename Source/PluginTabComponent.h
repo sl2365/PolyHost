@@ -66,6 +66,9 @@ public:
     const juce::Array<PointerControl::JumpPoint>& getPointerJumpPoints() const;
     void setPointerJumpPoints(const juce::Array<PointerControl::JumpPoint>& newPoints);
     void addPointerJumpPoint(juce::Point<float> position);
+    void clearPointerJumpPoints();
+    int findPointerJumpPointAt(juce::Point<float> position, float hitRadius) const;
+    bool removePointerJumpPointAtIndex(int index);
 
     std::function<void(const juce::File&)> onOpenDroppedPluginInNewTab;
     std::function<void()> onPluginLoadedDirectly;

@@ -15,6 +15,10 @@ public:
 
     bool hasTarget() const;
 
+    void setSnapWeights(float newXWeight, float newYWeight);
+    float getXSnapWeight() const;
+    float getYSnapWeight() const;
+
     void setJumpPoints(const juce::Array<JumpPoint>& newJumpPoints,
                        juce::Rectangle<int> sourceBounds);
 
@@ -39,4 +43,6 @@ private:
     int selectedJumpPoint = -1;
     int currentX = 0;
     int currentY = 0;
+    float xSnapWeight = 1.0f;
+    float ySnapWeight = 0.20f;
 };

@@ -356,7 +356,9 @@ void PluginTabComponent::clearPlugin()
     bypassed = false;
     clearPluginStateBaseline();
     preferredEditorBounds = { 0, 0, 360, 220 };
-    pointerJumpPoints.clear();
+    DebugLog::write("[PointerControl] PluginTabComponent::clearPlugin preserving "
+                    + juce::String(pointerJumpPoints.size()) + " point(s)");
+
     setPointerControlEditMode(false);
 
     loadButton.setVisible(true);
@@ -632,6 +634,10 @@ const juce::Array<PointerControl::JumpPoint>& PluginTabComponent::getPointerJump
 void PluginTabComponent::setPointerJumpPoints(const juce::Array<PointerControl::JumpPoint>& newPoints)
 {
     pointerJumpPoints = newPoints;
+
+    DebugLog::write("[PointerControl] PluginTabComponent::setPointerJumpPoints -> "
+                    + juce::String(pointerJumpPoints.size()) + " point(s)");
+
     repaint();
 }
 
@@ -643,6 +649,44 @@ void PluginTabComponent::addPointerJumpPoint(juce::Point<float> position)
     pointerJumpPoints.add(point);
 
     sendChangeMessage();
+}
+
+void PluginTabComponent::clearPointerJumpPoints()
+{
+    DebugLog::write("[PointerControl] PluginTabComponent::clearPointerJumpPoints clearing "
+                    + juce::String(pointerJumpPoints.size()) + " point(s)");
+
+    pointerJumpPoints.clear();
+    repaint();
+}
+
+int PluginTabComponent::findPointerJumpPointAt(juce::Point<float> position, float hitRadius) const
+{
+    const float hitRadiusSq = hitRadius * hitRadius;
+
+    for (int i = 0; i < pointerJumpPoints.size(); ++i)
+    {
+        const auto& point = pointerJumpPoints.getReference(i);
+        const float dx = point.x - position.x;
+        const float dy = point.y - position.y;
+        const float distSq = dx * dx + dy * dy;
+
+        if (distSq <= hitRadiusSq)
+            return i;
+    }
+
+    return -1;
+}
+
+bool PluginTabComponent::removePointerJumpPointAtIndex(int index)
+{
+    if (!juce::isPositiveAndBelow(index, pointerJumpPoints.size()))
+        return false;
+
+    pointerJumpPoints.remove(index);
+    repaint();
+    sendChangeMessage();
+    return true;
 }
 
 juce::MemoryBlock PluginTabComponent::getPluginState() const

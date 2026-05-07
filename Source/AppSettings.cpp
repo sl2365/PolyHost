@@ -24,6 +24,19 @@ static constexpr auto kWindowX              = "windowX";
 static constexpr auto kWindowY              = "windowY";
 static constexpr auto kRoutingWindowWidth   = "routingWindowWidth";
 static constexpr auto kRoutingWindowHeight  = "routingWindowHeight";
+static constexpr auto kPointerControlXccNumber              = "pointerControlXccNumber";
+static constexpr auto kPointerControlYccNumber              = "pointerControlYccNumber";
+static constexpr auto kPointerControlAdjustCcNumberNew      = "pointerControlAdjustCcNumberNew";
+static constexpr auto kPointerControlXSnapWeight            = "pointerControlXSnapWeight";
+static constexpr auto kPointerControlYSnapWeight            = "pointerControlYSnapWeight";
+static constexpr auto kPointerControlOverlayTransparency    = "pointerControlOverlayTransparency";
+static constexpr auto kPointerControlPointSize              = "pointerControlPointSize";
+static constexpr auto kPointerControlPointColourR           = "pointerControlPointColourR";
+static constexpr auto kPointerControlPointColourG           = "pointerControlPointColourG";
+static constexpr auto kPointerControlPointColourB           = "pointerControlPointColourB";
+static constexpr auto kPointerControlPreviewColourR         = "pointerControlPreviewColourR";
+static constexpr auto kPointerControlPreviewColourG         = "pointerControlPreviewColourG";
+static constexpr auto kPointerControlPreviewColourB         = "pointerControlPreviewColourB";
 
 bool AppSettings::getDebugLoggingEnabled() const
 {
@@ -454,3 +467,113 @@ void AppSettings::clearRoutingWindowSize()
     xml->removeAttribute(kRoutingWindowHeight);
     save();
 }
+
+int AppSettings::getPointerControlXccNumber() const
+{
+    return juce::jlimit(0, 127, xml->getIntAttribute(kPointerControlXccNumber, 76));
+}
+
+void AppSettings::setPointerControlXccNumber(int ccNumber)
+{
+    xml->setAttribute(kPointerControlXccNumber, juce::jlimit(0, 127, ccNumber));
+    save();
+}
+
+int AppSettings::getPointerControlYccNumber() const
+{
+    return juce::jlimit(0, 127, xml->getIntAttribute(kPointerControlYccNumber, 77));
+}
+
+void AppSettings::setPointerControlYccNumber(int ccNumber)
+{
+    xml->setAttribute(kPointerControlYccNumber, juce::jlimit(0, 127, ccNumber));
+    save();
+}
+
+int AppSettings::getPointerControlAdjustCcNumber() const
+{
+    return juce::jlimit(0, 127, xml->getIntAttribute(kPointerControlAdjustCcNumberNew, 78));
+}
+
+void AppSettings::setPointerControlAdjustCcNumber(int ccNumber)
+{
+    xml->setAttribute(kPointerControlAdjustCcNumberNew, juce::jlimit(0, 127, ccNumber));
+    save();
+}
+
+float AppSettings::getPointerControlXSnapWeight() const
+{
+    return juce::jmax(0.001f, (float) xml->getDoubleAttribute(kPointerControlXSnapWeight, 1.0));
+}
+
+void AppSettings::setPointerControlXSnapWeight(float weight)
+{
+    xml->setAttribute(kPointerControlXSnapWeight, juce::jmax(0.001f, weight));
+    save();
+}
+
+float AppSettings::getPointerControlYSnapWeight() const
+{
+    return juce::jmax(0.001f, (float) xml->getDoubleAttribute(kPointerControlYSnapWeight, 0.20));
+}
+
+void AppSettings::setPointerControlYSnapWeight(float weight)
+{
+    xml->setAttribute(kPointerControlYSnapWeight, juce::jmax(0.001f, weight));
+    save();
+}
+
+int AppSettings::getPointerControlOverlayTransparency() const
+{
+    return juce::jlimit(0, 40, xml->getIntAttribute(kPointerControlOverlayTransparency, 10));
+}
+
+void AppSettings::setPointerControlOverlayTransparency(int amount)
+{
+    xml->setAttribute(kPointerControlOverlayTransparency, juce::jlimit(0, 40, amount));
+    save();
+}
+
+int AppSettings::getPointerControlPointSize() const
+{
+    return juce::jlimit(3, 15, xml->getIntAttribute(kPointerControlPointSize, 4));
+}
+
+void AppSettings::setPointerControlPointSize(int sizePixels)
+{
+    xml->setAttribute(kPointerControlPointSize, juce::jlimit(3, 15, sizePixels));
+    save();
+}
+
+juce::Colour AppSettings::getPointerControlPointColour() const
+{
+    const auto r = juce::jlimit(0, 255, xml->getIntAttribute(kPointerControlPointColourR, 80));
+    const auto g = juce::jlimit(0, 255, xml->getIntAttribute(kPointerControlPointColourG, 255));
+    const auto b = juce::jlimit(0, 255, xml->getIntAttribute(kPointerControlPointColourB, 120));
+    return juce::Colour::fromRGB((juce::uint8) r, (juce::uint8) g, (juce::uint8) b);
+}
+
+void AppSettings::setPointerControlPointColour(juce::Colour colour)
+{
+    xml->setAttribute(kPointerControlPointColourR, (int) colour.getRed());
+    xml->setAttribute(kPointerControlPointColourG, (int) colour.getGreen());
+    xml->setAttribute(kPointerControlPointColourB, (int) colour.getBlue());
+    save();
+}
+
+juce::Colour AppSettings::getPointerControlPreviewColour() const
+{
+    const auto r = juce::jlimit(0, 255, xml->getIntAttribute(kPointerControlPreviewColourR, 255));
+    const auto g = juce::jlimit(0, 255, xml->getIntAttribute(kPointerControlPreviewColourG, 210));
+    const auto b = juce::jlimit(0, 255, xml->getIntAttribute(kPointerControlPreviewColourB, 80));
+    return juce::Colour::fromRGB((juce::uint8) r, (juce::uint8) g, (juce::uint8) b);
+}
+
+void AppSettings::setPointerControlPreviewColour(juce::Colour colour)
+{
+    xml->setAttribute(kPointerControlPreviewColourR, (int) colour.getRed());
+    xml->setAttribute(kPointerControlPreviewColourG, (int) colour.getGreen());
+    xml->setAttribute(kPointerControlPreviewColourB, (int) colour.getBlue());
+    save();
+}
+

@@ -53,6 +53,22 @@ bool PointerControl::hasTarget() const
     return !targetScreenBounds.isEmpty();
 }
 
+void PointerControl::setSnapWeights(float newXWeight, float newYWeight)
+{
+    xSnapWeight = juce::jmax(0.001f, newXWeight);
+    ySnapWeight = juce::jmax(0.001f, newYWeight);
+}
+
+float PointerControl::getXSnapWeight() const
+{
+    return xSnapWeight;
+}
+
+float PointerControl::getYSnapWeight() const
+{
+    return ySnapWeight;
+}
+
 bool PointerControl::hasJumpPoints() const
 {
     return jumpPoints.size() > 0;
@@ -138,7 +154,7 @@ void PointerControl::updateJumpSelection()
         const auto& point = jumpPoints.getReference(i);
         const float dx = point.x - virtualX;
         const float dy = point.y - virtualY;
-        const float dist = dx * dx + dy * dy;
+        const float dist = (dx * dx * xSnapWeight) + (dy * dy * ySnapWeight);
 
         if (dist < bestDist)
         {

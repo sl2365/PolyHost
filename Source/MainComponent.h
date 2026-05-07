@@ -105,6 +105,7 @@ class MainComponent final : public juce::Component,
                             public juce::MenuBarModel,
                             public juce::FileDragAndDropTarget,
                             private juce::ChangeListener,
+                            private juce::Timer,
                             public juce::ToolbarItemFactory
 {
 public:
@@ -345,6 +346,7 @@ private:
     {
         menuRecentPresetBase = 2000,
         menuOpenPresetsFolder = 2101,
+        menuPointerControlSettings = 2102
     };
 
     void getAllToolbarItemIds(juce::Array<int>& ids) override;
@@ -398,6 +400,7 @@ private:
     void togglePointerControlEditMode();
     bool isPointerControlEditModeEnabled() const;
     void updatePointerEditOverlay();
+    void hidePointerEditOverlay();
     void destroyPointerEditOverlay();
 
     SessionData buildSessionData() const;
@@ -490,6 +493,8 @@ private:
     void refreshPointerControlTarget();
     bool pointerControlEditModeEnabled = false;
     std::unique_ptr<PointerEditOverlayWindow> pointerEditOverlayWindow;
+    void timerCallback() override;
+    void showPointerControlSettingsDialog();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };

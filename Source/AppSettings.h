@@ -58,6 +58,33 @@ public:
     juce::String getMidiAutoAssignMode() const;
     void setMidiAutoAssignMode(const juce::String& mode);
 
+    int getPointerControlXccNumber() const;
+    void setPointerControlXccNumber(int ccNumber);
+
+    int getPointerControlYccNumber() const;
+    void setPointerControlYccNumber(int ccNumber);
+
+    int getPointerControlAdjustCcNumber() const;
+    void setPointerControlAdjustCcNumber(int ccNumber);
+
+    float getPointerControlXSnapWeight() const;
+    void setPointerControlXSnapWeight(float weight);
+
+    float getPointerControlYSnapWeight() const;
+    void setPointerControlYSnapWeight(float weight);
+
+    int getPointerControlOverlayTransparency() const;
+    void setPointerControlOverlayTransparency(int amount);
+
+    int getPointerControlPointSize() const;
+    void setPointerControlPointSize(int sizePixels);
+
+    juce::Colour getPointerControlPointColour() const;
+    void setPointerControlPointColour(juce::Colour colour);
+
+    juce::Colour getPointerControlPreviewColour() const;
+    void setPointerControlPreviewColour(juce::Colour colour);
+
     juce::StringArray getPluginScanFolders() const;
     void setPluginScanFolders(const juce::StringArray& folders);
     void addPluginScanFolder(const juce::String& folderPath);
