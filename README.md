@@ -19,8 +19,8 @@ I always liked tools like TobyBear's MiniHost, SaviHost and Tone2's NanoHost. Bu
 | Tabbed interface (Synth: parallel + FX: serial) | ✅ Working |
 | Tab-order = FX routing order | ✅ Working |
 | Portable settings (no AppData/registry) | ✅ Working |
-| Audio/MIDI recording | 🔲 Planned |
-| PointerControl functionality | ✅ Working |
+| Audio / MIDI recording | 🔲 Planned |
+| Pointer Control functionality | ✅ Working |
 | Standalone App | ✅ Working |
 | VST3 Plugin for use in other hosts | 🔲 Planned |
 
