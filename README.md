@@ -20,7 +20,7 @@ I always liked tools like TobyBear's MiniHost, SaviHost and Tone2's NanoHost. Bu
 | Tab-order = FX routing order | ✅ Working |
 | Portable settings (no AppData/registry) | ✅ Working |
 | Audio/MIDI recording | 🔲 Planned |
-| PointerCC functionality | ✅ Working - WIP-basics only |
+| PointerControl functionality | ✅ Working |
 | Standalone App | ✅ Working |
 | VST3 Plugin for use in other hosts | 🔲 Planned |
 
@@ -82,19 +82,16 @@ After that, builds are fully offline.
 The finished exe appears in dist\PolyHostInterface.exe
 
 ## Opening a Plugin
-
 1. Right-click any .vst2, .vst3 or .clap file in File Explorer
 2. Open with > Choose another app
 3. Browse to PolyHostInterface.exe
 4. Tick "Always use this app" if you want it permanent
 
 ## VST2 Support
-
 If you have a copy of vstsdk2.4, place it here: {CMAKE_SOURCE_DIR}/tools/vstsdk2.4
 then run build.bat.
 
 ## CLAP Support
-
 Download clap-main here: https://github.com/free-audio/clap
 Install to tools/clap/CMakeLists.txt
 
@@ -115,4 +112,4 @@ MIDI Device(s)
                     |
               [Audio Out]  ->  Output meter
 ```
-The synths always wired in parallel. FX are in series and routing can be modified by entering the Routing page. Click the Routing toolbar button and a list of all tabs appears, use Up and Down buttons to manage the processing order.
+MIDI always wired in parallel. Synth and FX audio routing is partially flexible, where plugins are in series and routing can be modified by entering the Routing page. Click the Routing toolbar button and a list of all tabs appears, use Up and Down buttons to manage the processing order.
