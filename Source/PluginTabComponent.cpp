@@ -626,6 +626,22 @@ bool PluginTabComponent::isPointerControlEditMode() const
     return pointerControlEditMode;
 }
 
+void PluginTabComponent::setPointerLaneTolerance(float newTolerance)
+{
+    const float clamped = juce::jlimit(1.0f, 128.0f, newTolerance);
+
+    if (juce::approximatelyEqual(pointerLaneTolerance, clamped))
+        return;
+
+    pointerLaneTolerance = clamped;
+    sendChangeMessage();
+}
+
+float PluginTabComponent::getPointerLaneTolerance() const
+{
+    return pointerLaneTolerance;
+}
+
 const juce::Array<PointerControl::JumpPoint>& PluginTabComponent::getPointerJumpPoints() const
 {
     return pointerJumpPoints;

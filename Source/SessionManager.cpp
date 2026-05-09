@@ -42,6 +42,7 @@ bool SessionManager::saveSessionToFile(const SessionData& session, const juce::F
         tabXml->setAttribute("hasSavedWindowBounds", tab.hasSavedWindowBounds);
         tabXml->setAttribute("savedWindowWidth", tab.savedWindowWidth);
         tabXml->setAttribute("savedWindowHeight", tab.savedWindowHeight);
+        tabXml->setAttribute("pointerLaneTolerance", tab.pointerLaneTolerance);
 
         if (!tab.midiAssignedDeviceIdentifiers.isEmpty())
         {
@@ -116,6 +117,7 @@ bool SessionManager::loadSessionFromFile(const juce::File& file,
         tab.hasSavedWindowBounds = tabXml->getBoolAttribute("hasSavedWindowBounds", false);
         tab.savedWindowWidth = tabXml->getIntAttribute("savedWindowWidth", 0);
         tab.savedWindowHeight = tabXml->getIntAttribute("savedWindowHeight", 0);
+        tab.pointerLaneTolerance = (float) tabXml->getDoubleAttribute("pointerLaneTolerance", 10.0);
 
         if (auto* midiAssignmentsXml = tabXml->getChildByName("MidiAssignments"))
         {

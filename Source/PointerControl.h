@@ -19,6 +19,9 @@ public:
     float getXSnapWeight() const;
     float getYSnapWeight() const;
 
+    void setLaneTolerance(float newTolerance);
+    float getLaneTolerance() const;
+
     void setJumpPoints(const juce::Array<JumpPoint>& newJumpPoints,
                        juce::Rectangle<int> sourceBounds);
 
@@ -34,7 +37,15 @@ private:
     void moveCursorToCurrentPosition();
     void syncToPhysicalCursorPosition();
     void updateJumpSelection();
+    int findNearestJumpPointInCurrentLane() const;
     bool hasJumpPoints() const;
+
+    enum class LastMoveAxis
+    {
+        none,
+        x,
+        y
+    };
 
     juce::Rectangle<int> targetScreenBounds;
     juce::Array<JumpPoint> jumpPoints;
@@ -45,4 +56,11 @@ private:
     int currentY = 0;
     float xSnapWeight = 1.0f;
     float ySnapWeight = 0.20f;
+    float laneLockStrength = 4.0f;
+    float lockedLaneX = 0.0f;
+    float lockedLaneY = 0.0f;
+    bool hasLockedLaneX = false;
+    bool hasLockedLaneY = false;
+    float laneTolerance = 10.0f;
+    LastMoveAxis lastMoveAxis = LastMoveAxis::none;
 };

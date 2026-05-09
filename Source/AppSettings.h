@@ -79,6 +79,9 @@ public:
     int getPointerControlPointSize() const;
     void setPointerControlPointSize(int sizePixels);
 
+    int getPointerControlToleranceCcNumber() const;
+    void setPointerControlToleranceCcNumber(int ccNumber);
+
     juce::Colour getPointerControlPointColour() const;
     void setPointerControlPointColour(juce::Colour colour);
 

@@ -132,6 +132,9 @@ public:
     void saveCurrentRoutingWindowSize();
 
     AppSettings& getSettings() { return settings; }
+    void showPointerOverlayCoordinates(juce::Point<float> position,
+                                       PointerControl::JumpPoint* hoveredPoint = nullptr);
+    void clearPointerOverlayCoordinates();
 
 private:
     class PointerEditOverlayWindow;
@@ -328,6 +331,7 @@ private:
     void reorderLiveTabs(int fromIndex, int toIndex);
     void toggleTabBypass(int tabIndex);
     void updateStatusBarText();
+    void showTemporaryStatusMessage(const juce::String& text, int durationMs = 1500);
     void showAboutDialog();
     enum ToolbarItemIds
     {
@@ -490,8 +494,12 @@ private:
     // Pointer Control
     PointerControl pointerControl;
     int lastPointerAdjustCcValue = -1;
+    int lastPointerToleranceCcValue = -1;
     void refreshPointerControlTarget();
     bool pointerControlEditModeEnabled = false;
+    bool showingPointerOverlayCoordinates = false;
+    juce::String temporaryStatusMessage;
+    double temporaryStatusMessageUntilMs = 0.0;
     std::unique_ptr<PointerEditOverlayWindow> pointerEditOverlayWindow;
     void timerCallback() override;
     void showPointerControlSettingsDialog();

@@ -43,6 +43,7 @@ struct SessionTabData
     int savedWindowHeight = 0;
     juce::StringArray midiAssignedDeviceIdentifiers;
     juce::Array<SessionPointerPoint> pointerPoints;
+    float pointerLaneTolerance = 10.0f;
     bool hasPlugin = false;
     SessionPluginData plugin;
 };

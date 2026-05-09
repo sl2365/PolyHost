@@ -37,6 +37,7 @@ static constexpr auto kPointerControlPointColourB           = "pointerControlPoi
 static constexpr auto kPointerControlPreviewColourR         = "pointerControlPreviewColourR";
 static constexpr auto kPointerControlPreviewColourG         = "pointerControlPreviewColourG";
 static constexpr auto kPointerControlPreviewColourB         = "pointerControlPreviewColourB";
+static constexpr auto kPointerControlToleranceCcNumber      = "pointerControlToleranceCcNumber";
 
 bool AppSettings::getDebugLoggingEnabled() const
 {
@@ -574,6 +575,17 @@ void AppSettings::setPointerControlPreviewColour(juce::Colour colour)
     xml->setAttribute(kPointerControlPreviewColourR, (int) colour.getRed());
     xml->setAttribute(kPointerControlPreviewColourG, (int) colour.getGreen());
     xml->setAttribute(kPointerControlPreviewColourB, (int) colour.getBlue());
+    save();
+}
+
+int AppSettings::getPointerControlToleranceCcNumber() const
+{
+    return juce::jlimit(0, 127, xml->getIntAttribute(kPointerControlToleranceCcNumber, 75));
+}
+
+void AppSettings::setPointerControlToleranceCcNumber(int ccNumber)
+{
+    xml->setAttribute(kPointerControlToleranceCcNumber, juce::jlimit(0, 127, ccNumber));
     save();
 }
 
