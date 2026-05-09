@@ -18,8 +18,8 @@ static constexpr const char* kNameAttribute                 = "name";
 static constexpr const char* kDebugLoggingEnabled           = "debugLoggingEnabled";
 static constexpr const char* kAdvancedDebugLoggingEnabled   = "advancedDebugLoggingEnabled";
 static constexpr const char* kClearDebugLogOnStartup        = "clearDebugLogOnStartup";
-static constexpr auto kLastPresetPath   = "lastPresetPath";
-static constexpr auto kRecentPresets    = "recentPresets";
+static constexpr auto kLastPresetPath       = "lastPresetPath";
+static constexpr auto kRecentPresets        = "recentPresets";
 static constexpr auto kWindowX              = "windowX";
 static constexpr auto kWindowY              = "windowY";
 static constexpr auto kRoutingWindowWidth   = "routingWindowWidth";
@@ -31,6 +31,11 @@ static constexpr auto kPointerControlXSnapWeight            = "pointerControlXSn
 static constexpr auto kPointerControlYSnapWeight            = "pointerControlYSnapWeight";
 static constexpr auto kPointerControlOverlayTransparency    = "pointerControlOverlayTransparency";
 static constexpr auto kPointerControlPointSize              = "pointerControlPointSize";
+static constexpr auto kPointerControlShowCrosshair          = "pointerControlShowCrosshair";
+static constexpr auto kPointerControlCrosshairColourR       = "pointerControlCrosshairColourR";
+static constexpr auto kPointerControlCrosshairColourG       = "pointerControlCrosshairColourG";
+static constexpr auto kPointerControlCrosshairColourB       = "pointerControlCrosshairColourB";
+static constexpr auto kPointerControlCrosshairColourA       = "pointerControlCrosshairColourA";
 static constexpr auto kPointerControlPointColourR           = "pointerControlPointColourR";
 static constexpr auto kPointerControlPointColourG           = "pointerControlPointColourG";
 static constexpr auto kPointerControlPointColourB           = "pointerControlPointColourB";
@@ -526,12 +531,12 @@ void AppSettings::setPointerControlYSnapWeight(float weight)
 
 int AppSettings::getPointerControlOverlayTransparency() const
 {
-    return juce::jlimit(0, 40, xml->getIntAttribute(kPointerControlOverlayTransparency, 10));
+    return juce::jlimit(0, 150, xml->getIntAttribute(kPointerControlOverlayTransparency, 30));
 }
 
 void AppSettings::setPointerControlOverlayTransparency(int amount)
 {
-    xml->setAttribute(kPointerControlOverlayTransparency, juce::jlimit(0, 40, amount));
+    xml->setAttribute(kPointerControlOverlayTransparency, juce::jlimit(0, 150, amount));
     save();
 }
 
@@ -543,6 +548,24 @@ int AppSettings::getPointerControlPointSize() const
 void AppSettings::setPointerControlPointSize(int sizePixels)
 {
     xml->setAttribute(kPointerControlPointSize, juce::jlimit(3, 15, sizePixels));
+    save();
+}
+
+juce::Colour AppSettings::getPointerControlCrosshairColour() const
+{
+    return juce::Colour::fromRGBA(
+        (juce::uint8) xml->getIntAttribute(kPointerControlCrosshairColourR, 255),
+        (juce::uint8) xml->getIntAttribute(kPointerControlCrosshairColourG, 255),
+        (juce::uint8) xml->getIntAttribute(kPointerControlCrosshairColourB, 255),
+        (juce::uint8) xml->getIntAttribute(kPointerControlCrosshairColourA, 70));
+}
+
+void AppSettings::setPointerControlCrosshairColour(juce::Colour colour)
+{
+    xml->setAttribute(kPointerControlCrosshairColourR, (int) colour.getRed());
+    xml->setAttribute(kPointerControlCrosshairColourG, (int) colour.getGreen());
+    xml->setAttribute(kPointerControlCrosshairColourB, (int) colour.getBlue());
+    xml->setAttribute(kPointerControlCrosshairColourA, (int) colour.getAlpha());
     save();
 }
 
@@ -586,6 +609,17 @@ int AppSettings::getPointerControlToleranceCcNumber() const
 void AppSettings::setPointerControlToleranceCcNumber(int ccNumber)
 {
     xml->setAttribute(kPointerControlToleranceCcNumber, juce::jlimit(0, 127, ccNumber));
+    save();
+}
+
+bool AppSettings::getPointerControlShowCrosshair() const
+{
+    return xml->getBoolAttribute(kPointerControlShowCrosshair, true);
+}
+
+void AppSettings::setPointerControlShowCrosshair(bool shouldShow)
+{
+    xml->setAttribute(kPointerControlShowCrosshair, shouldShow);
     save();
 }
 

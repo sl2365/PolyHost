@@ -117,7 +117,7 @@ private:
     juce::MemoryBlock pluginStateBaseline;
 
     juce::Array<PointerControl::JumpPoint> pointerJumpPoints;
-    float pointerLaneTolerance = 10.0f;
+    float pointerLaneTolerance = 30.0f;
     bool pointerControlEditMode = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginTabComponent)

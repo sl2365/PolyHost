@@ -117,7 +117,7 @@ bool SessionManager::loadSessionFromFile(const juce::File& file,
         tab.hasSavedWindowBounds = tabXml->getBoolAttribute("hasSavedWindowBounds", false);
         tab.savedWindowWidth = tabXml->getIntAttribute("savedWindowWidth", 0);
         tab.savedWindowHeight = tabXml->getIntAttribute("savedWindowHeight", 0);
-        tab.pointerLaneTolerance = (float) tabXml->getDoubleAttribute("pointerLaneTolerance", 10.0);
+        tab.pointerLaneTolerance = (float) tabXml->getDoubleAttribute("pointerLaneTolerance", 30.0);
 
         if (auto* midiAssignmentsXml = tabXml->getChildByName("MidiAssignments"))
         {

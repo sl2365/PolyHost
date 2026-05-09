@@ -76,11 +76,17 @@ public:
     int getPointerControlOverlayTransparency() const;
     void setPointerControlOverlayTransparency(int amount);
 
+    bool getPointerControlShowCrosshair() const;
+    void setPointerControlShowCrosshair(bool shouldShow);
+
     int getPointerControlPointSize() const;
     void setPointerControlPointSize(int sizePixels);
 
     int getPointerControlToleranceCcNumber() const;
     void setPointerControlToleranceCcNumber(int ccNumber);
+
+    juce::Colour getPointerControlCrosshairColour() const;
+    void setPointerControlCrosshairColour(juce::Colour colour);
 
     juce::Colour getPointerControlPointColour() const;
     void setPointerControlPointColour(juce::Colour colour);

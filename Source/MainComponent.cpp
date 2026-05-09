@@ -153,6 +153,8 @@ namespace
             configureLabel(yWeightLabel, "Y Weight:", juce::Justification::centredRight);
             configureLabel(overlayTransparencyLabel, "Overlay\nTransparency:", juce::Justification::centredRight);
             configureLabel(pointSizeLabel, "Point Size:", juce::Justification::centredRight);
+            configureLabel(showCrosshairLabel, "Show Crosshair:", juce::Justification::centredRight);
+            configureLabel(crosshairRgbaLabel, "Crosshair RGBA:", juce::Justification::centredRight);
             configureLabel(pointRgbLabel, "Point RGB:", juce::Justification::centredRight);
             configureLabel(previewRgbLabel, "Preview RGB:", juce::Justification::centredRight);
 
@@ -166,7 +168,9 @@ namespace
             configureTipLabel(tipWeights, "Fallback snap weighting. (Legacy?)\nDefaults: X=1.0  Y=0.2");
             configureTipLabel(tipOverlay, "Overlay darkness while editing.");
             configureTipLabel(tipPointSize, "Size of saved jump-point colour markers.");
+            configureTipLabel(tipShowCrosshair, "Shows full-width and full-height guide lines.");
             configureTipLabel(tipRgb, "Point RGB: Saved point colour.\nPreview RGB: Point colour on mouse down.");
+            configureTipLabel(tipCrosshairRgba, "Crosshair colour and alpha.");
 
             configureCcEditor(xCcEditor, settings.getPointerControlXccNumber());
             configureCcEditor(yCcEditor, settings.getPointerControlYccNumber());
@@ -176,11 +180,18 @@ namespace
             configureWeightEditor(xWeightEditor, settings.getPointerControlXSnapWeight());
             configureWeightEditor(yWeightEditor, settings.getPointerControlYSnapWeight());
 
-            configureIntegerEditor(overlayTransparencyEditor, settings.getPointerControlOverlayTransparency());
-            configureIntegerEditor(pointSizeEditor, settings.getPointerControlPointSize());
+            configureIntegerEditor(overlayTransparencyEditor, settings.getPointerControlOverlayTransparency(), 0, 150);
+            configureIntegerEditor(pointSizeEditor, settings.getPointerControlPointSize(), 3, 15);
+
+            addAndMakeVisible(showCrosshairToggle);
+            showCrosshairToggle.setButtonText({});
+            showCrosshairToggle.setToggleState(settings.getPointerControlShowCrosshair(),
+                                               juce::dontSendNotification);
+            showCrosshairToggle.setColour(juce::ToggleButton::textColourId, juce::Colours::white);
 
             auto pointColour = settings.getPointerControlPointColour();
             auto previewColour = settings.getPointerControlPreviewColour();
+            auto crosshairColour = settings.getPointerControlCrosshairColour();
 
             configureIntegerEditor(pointColourREditor, (int) pointColour.getRed());
             configureIntegerEditor(pointColourGEditor, (int) pointColour.getGreen());
@@ -189,6 +200,11 @@ namespace
             configureIntegerEditor(previewColourREditor, (int) previewColour.getRed());
             configureIntegerEditor(previewColourGEditor, (int) previewColour.getGreen());
             configureIntegerEditor(previewColourBEditor, (int) previewColour.getBlue());
+
+            configureIntegerEditor(crosshairColourREditor, (int) crosshairColour.getRed());
+            configureIntegerEditor(crosshairColourGEditor, (int) crosshairColour.getGreen());
+            configureIntegerEditor(crosshairColourBEditor, (int) crosshairColour.getBlue());
+            configureIntegerEditor(crosshairColourAEditor, (int) crosshairColour.getAlpha());
 
             setSize(430, 360);
         }
@@ -203,8 +219,9 @@ namespace
             settings.setPointerControlXSnapWeight(parseFloat(xWeightEditor.getText(), 1.0f, 0.001f, 100.0f));
             settings.setPointerControlYSnapWeight(parseFloat(yWeightEditor.getText(), 0.20f, 0.001f, 100.0f));
 
-            settings.setPointerControlOverlayTransparency(parseInt(overlayTransparencyEditor.getText(), 10, 0, 40));
+            settings.setPointerControlOverlayTransparency(parseInt(overlayTransparencyEditor.getText(), 40, 0, 150));
             settings.setPointerControlPointSize(parseInt(pointSizeEditor.getText(), 4, 3, 15));
+            settings.setPointerControlShowCrosshair(showCrosshairToggle.getToggleState());
 
             settings.setPointerControlPointColour(juce::Colour::fromRGB(
                 (juce::uint8) parseInt(pointColourREditor.getText(), 80, 0, 255),
@@ -215,6 +232,12 @@ namespace
                 (juce::uint8) parseInt(previewColourREditor.getText(), 255, 0, 255),
                 (juce::uint8) parseInt(previewColourGEditor.getText(), 210, 0, 255),
                 (juce::uint8) parseInt(previewColourBEditor.getText(), 0, 0, 255)));
+
+            settings.setPointerControlCrosshairColour(juce::Colour::fromRGBA(
+                (juce::uint8) parseInt(crosshairColourREditor.getText(), 255, 0, 255),
+                (juce::uint8) parseInt(crosshairColourGEditor.getText(), 255, 0, 255),
+                (juce::uint8) parseInt(crosshairColourBEditor.getText(), 255, 0, 255),
+                (juce::uint8) parseInt(crosshairColourAEditor.getText(), 70, 0, 255)));
         }
 
         void resetToDefaults()
@@ -227,8 +250,9 @@ namespace
             xWeightEditor.setText("1.000", juce::dontSendNotification);
             yWeightEditor.setText("0.200", juce::dontSendNotification);
 
-            overlayTransparencyEditor.setText("10", juce::dontSendNotification);
+            overlayTransparencyEditor.setText("30", juce::dontSendNotification);
             pointSizeEditor.setText("4", juce::dontSendNotification);
+            showCrosshairToggle.setToggleState(true, juce::dontSendNotification);
 
             pointColourREditor.setText("80", juce::dontSendNotification);
             pointColourGEditor.setText("255", juce::dontSendNotification);
@@ -237,6 +261,11 @@ namespace
             previewColourREditor.setText("255", juce::dontSendNotification);
             previewColourGEditor.setText("210", juce::dontSendNotification);
             previewColourBEditor.setText("0", juce::dontSendNotification);
+
+            crosshairColourREditor.setText("255", juce::dontSendNotification);
+            crosshairColourGEditor.setText("255", juce::dontSendNotification);
+            crosshairColourBEditor.setText("255", juce::dontSendNotification);
+            crosshairColourAEditor.setText("70", juce::dontSendNotification);
         }
 
         void resized() override
@@ -314,6 +343,30 @@ namespace
             layoutStandardRow(pointSizeLabel, pointSizeEditor, &tipPointSize);
 
             {
+                auto row = area.removeFromTop(rowHeight);
+                showCrosshairLabel.setBounds(row.removeFromLeft(labelWidth));
+                showCrosshairToggle.setBounds(row.removeFromLeft(24));
+                row.removeFromLeft(infoGap);
+                tipShowCrosshair.setBounds(row.removeFromLeft(infoWidth));
+                area.removeFromTop(rowGap);
+            }
+
+            {
+                auto row = area.removeFromTop(rowHeight);
+                crosshairRgbaLabel.setBounds(row.removeFromLeft(labelWidth));
+                crosshairColourREditor.setBounds(row.removeFromLeft(rgbFieldWidth));
+                row.removeFromLeft(4);
+                crosshairColourGEditor.setBounds(row.removeFromLeft(rgbFieldWidth));
+                row.removeFromLeft(4);
+                crosshairColourBEditor.setBounds(row.removeFromLeft(rgbFieldWidth));
+                row.removeFromLeft(4);
+                crosshairColourAEditor.setBounds(row.removeFromLeft(rgbFieldWidth));
+                row.removeFromLeft(infoGap);
+                tipCrosshairRgba.setBounds(row.removeFromLeft(infoWidth));
+                area.removeFromTop(rowGap);
+            }
+
+            {
                 auto combinedArea = area.removeFromTop(rowHeight * 2 + rowGap);
                 auto combinedBounds = combinedArea;
 
@@ -367,6 +420,41 @@ namespace
         public:
             using juce::TextEditor::TextEditor;
 
+            void configureAsInteger(int defaultValueIn, int minValueIn, int maxValueIn)
+            {
+                isFloat = false;
+                defaultIntValue = defaultValueIn;
+                minIntValue = minValueIn;
+                maxIntValue = maxValueIn;
+            }
+
+            void configureAsFloat(float defaultValueIn, float minValueIn, float maxValueIn, int decimalsIn = 3)
+            {
+                isFloat = true;
+                defaultFloatValue = defaultValueIn;
+                minFloatValue = minValueIn;
+                maxFloatValue = maxValueIn;
+                floatDecimals = decimalsIn;
+            }
+
+            void clampCurrentText()
+            {
+                auto text = getText().trim();
+
+                if (isFloat)
+                {
+                    auto value = text.isEmpty() ? defaultFloatValue : text.getFloatValue();
+                    value = juce::jlimit(minFloatValue, maxFloatValue, value);
+                    setText(juce::String(value, floatDecimals), juce::dontSendNotification);
+                }
+                else
+                {
+                    auto value = text.isEmpty() ? defaultIntValue : text.getIntValue();
+                    value = juce::jlimit(minIntValue, maxIntValue, value);
+                    setText(juce::String(value), juce::dontSendNotification);
+                }
+            }
+
             void mouseWheelMove(const juce::MouseEvent& event,
                                 const juce::MouseWheelDetails& wheel) override
             {
@@ -380,19 +468,49 @@ namespace
 
                 auto text = getText().trim();
 
-                if (text.containsChar('.'))
+                if (isFloat)
                 {
-                    auto value = text.getDoubleValue();
-                    value += (wheel.deltaY > 0.0f ? 1.0 : -1.0) * 0.1;
-                    setText(juce::String(value, 3), juce::dontSendNotification);
+                    auto value = text.isEmpty() ? defaultFloatValue : text.getFloatValue();
+                    value += (wheel.deltaY > 0.0f ? 0.1f : -0.1f);
+                    value = juce::jlimit(minFloatValue, maxFloatValue, value);
+                    setText(juce::String(value, floatDecimals), juce::dontSendNotification);
                 }
                 else
                 {
-                    auto value = text.getIntValue();
+                    auto value = text.isEmpty() ? defaultIntValue : text.getIntValue();
                     value += (wheel.deltaY > 0.0f ? 1 : -1);
+                    value = juce::jlimit(minIntValue, maxIntValue, value);
                     setText(juce::String(value), juce::dontSendNotification);
                 }
             }
+
+            void focusLost(FocusChangeType cause) override
+            {
+                clampCurrentText();
+                juce::TextEditor::focusLost(cause);
+            }
+
+            bool keyPressed(const juce::KeyPress& key) override
+            {
+                const bool handled = juce::TextEditor::keyPressed(key);
+
+                if (key == juce::KeyPress::returnKey)
+                    clampCurrentText();
+
+                return handled;
+            }
+
+        private:
+            bool isFloat = false;
+
+            int defaultIntValue = 0;
+            int minIntValue = 0;
+            int maxIntValue = 999;
+
+            float defaultFloatValue = 0.0f;
+            float minFloatValue = 0.0f;
+            float maxFloatValue = 999.0f;
+            int floatDecimals = 3;
         };
 
         void configureTipLabel(juce::Label& label, const juce::String& text)
@@ -415,22 +533,27 @@ namespace
         void configureCcEditor(ScrollableTextEditor& ed, int value)
         {
             configureBaseEditor(ed);
-            ed.setText(juce::String(value), juce::dontSendNotification);
+            ed.configureAsInteger(value, 0, 127);
+            ed.setText(juce::String(juce::jlimit(0, 127, value)), juce::dontSendNotification);
             ed.setInputRestrictions(3, "0123456789");
         }
 
         void configureWeightEditor(ScrollableTextEditor& ed, float value)
         {
             configureBaseEditor(ed);
-            ed.setText(juce::String(value, 3), juce::dontSendNotification);
+            ed.configureAsFloat(value, 0.001f, 100.0f, 3);
+            ed.setText(juce::String(juce::jlimit(0.001f, 100.0f, value), 3), juce::dontSendNotification);
             ed.setInputRestrictions(0, "0123456789.");
         }
 
-        void configureIntegerEditor(ScrollableTextEditor& ed, int value)
+        void configureIntegerEditor(ScrollableTextEditor& ed, int value, int minValue = 0, int maxValue = 255)
         {
             configureBaseEditor(ed);
-            ed.setText(juce::String(value), juce::dontSendNotification);
-            ed.setInputRestrictions(3, "0123456789");
+            ed.configureAsInteger(value, minValue, maxValue);
+            ed.setText(juce::String(juce::jlimit(minValue, maxValue, value)), juce::dontSendNotification);
+
+            const int maxDigits = juce::jmax(3, juce::String(maxValue).length());
+            ed.setInputRestrictions(maxDigits, "0123456789");
         }
 
         static int parseInt(const juce::String& text, int fallback, int minValue, int maxValue)
@@ -450,24 +573,26 @@ namespace
         }
 
         AppSettings& settings;
-        float currentTolerance = 10.0f;
+        float currentTolerance = 30.0f;
 
         juce::Label xCcLabel, yCcLabel, adjustCcLabel, toleranceCcLabel;
         juce::Label xWeightLabel, yWeightLabel;
-        juce::Label overlayTransparencyLabel, pointSizeLabel;
-        juce::Label pointRgbLabel, previewRgbLabel;
+        juce::Label overlayTransparencyLabel, pointSizeLabel, showCrosshairLabel;
+        juce::Label pointRgbLabel, previewRgbLabel, crosshairRgbaLabel;
 
         juce::Label currentToleranceInfoLabel, currentToleranceLineLabel;
 
         juce::Label tipXcc, tipYcc, tipAdjustCc;
-        juce::Label tipWeights, tipOverlay, tipPointSize, tipRgb;
+        juce::Label tipWeights, tipOverlay, tipPointSize, tipShowCrosshair, tipRgb, tipCrosshairRgba;
 
         ScrollableTextEditor xCcEditor, yCcEditor, adjustCcEditor, toleranceCcEditor;
         ScrollableTextEditor xWeightEditor, yWeightEditor;
         ScrollableTextEditor overlayTransparencyEditor, pointSizeEditor;
+        juce::ToggleButton showCrosshairToggle;
 
         ScrollableTextEditor pointColourREditor, pointColourGEditor, pointColourBEditor;
         ScrollableTextEditor previewColourREditor, previewColourGEditor, previewColourBEditor;
+        ScrollableTextEditor crosshairColourREditor, crosshairColourGEditor, crosshairColourBEditor, crosshairColourAEditor;
     };
 
     class AboutDialogContent final : public juce::Component
@@ -547,8 +672,9 @@ namespace
 
         void paint(juce::Graphics& g) override
         {
-            const float overlayAlpha = (float) owner.getSettings().getPointerControlOverlayTransparency() / 100.0f;
-            g.fillAll(juce::Colours::black.withAlpha(overlayAlpha));
+            const auto overlayAlpha = (juce::uint8) juce::jlimit(0, 150,
+                owner.getSettings().getPointerControlOverlayTransparency());
+            g.fillAll(juce::Colour::fromRGBA(0, 0, 0, overlayAlpha));
 
             auto bounds = getLocalBounds();
             auto banner = bounds.removeFromTop(24);
@@ -561,6 +687,18 @@ namespace
             g.drawText("Pointer Control Edit Mode Enabled",
                        banner.reduced(8, 0),
                        juce::Justification::centred);
+
+            if (owner.getSettings().getPointerControlShowCrosshair() && hasHoverPosition)
+            {
+                const auto crosshairPos = previewActive ? previewPosition : hoverPosition;
+
+                const int crossX = juce::jlimit(0, getWidth()  - 1, (int) std::round(crosshairPos.x));
+                const int crossY = juce::jlimit(0, getHeight() - 1, (int) std::round(crosshairPos.y));
+
+                g.setColour(owner.getSettings().getPointerControlCrosshairColour());
+                g.fillRect(0, crossY, getWidth(), 1);
+                g.fillRect(crossX, 0, 1, getHeight());
+            }
 
             if (auto* tc = owner.getSettingsSafeCurrentTabForOverlay())
             {
@@ -624,6 +762,8 @@ namespace
 
             mouseDownPosition = event.position;
             previewPosition = event.position;
+            hoverPosition = event.position;
+            hasHoverPosition = true;
             previewActive = false;
             pendingDeletePointIndex = -1;
             owner.showPointerOverlayCoordinates(event.position);
@@ -677,6 +817,8 @@ namespace
                 return;
 
             previewPosition = event.position;
+            hoverPosition = event.position;
+            hasHoverPosition = true;
 
             if (auto* tc = owner.getSettingsSafeCurrentTabForOverlay())
             {
@@ -738,6 +880,9 @@ namespace
 
         void mouseMove(const juce::MouseEvent& event) override
         {
+            hoverPosition = event.position;
+            hasHoverPosition = true;
+
             auto* tc = owner.getSettingsSafeCurrentTabForOverlay();
             if (tc == nullptr)
             {
@@ -761,7 +906,9 @@ namespace
 
         void mouseExit(const juce::MouseEvent&) override
         {
+            hasHoverPosition = false;
             owner.clearPointerOverlayCoordinates();
+            repaint();
         }
 
     private:
@@ -875,6 +1022,8 @@ namespace
         MainComponent& owner;
         bool previewActive = false;
         juce::Point<float> previewPosition;
+        juce::Point<float> hoverPosition;
+        bool hasHoverPosition = false;
         int pendingDeletePointIndex = -1;
         juce::Point<float> mouseDownPosition;
         SnapMode snapMode = SnapMode::off;
@@ -1127,7 +1276,7 @@ MainComponent::MainComponent()
     pointerControl.setSnapWeights(settings.getPointerControlXSnapWeight(),
                                   settings.getPointerControlYSnapWeight());
 
-    pointerControl.setLaneTolerance(10.0f);
+    pointerControl.setLaneTolerance(30.0f);
 
     auto enabledMidiDeviceIdentifiers = settings.getEnabledMidiDeviceIdentifiers();
 
@@ -1843,7 +1992,7 @@ void MainComponent::configurePluginTabComponent(PluginTabComponent& tabComponent
 void MainComponent::addEmptyTab()
 {
     auto* tc = pluginTabs.add(new PluginTabComponent(audioEngine, pluginTabs.size()));
-    tc->setPointerLaneTolerance(10.0f);
+    tc->setPointerLaneTolerance(30.0f);
     configurePluginTabComponent(*tc);
     tc->addChangeListener(this);
 
@@ -4793,14 +4942,14 @@ void MainComponent::showPointerOverlayCoordinates(juce::Point<float> position,
 
     showingPointerOverlayCoordinates = true;
 
-    juce::String text = "PolyHostInterface  |  Edit Cursor: X="
+    juce::String text = "PolyHostInterface  |  Position: X="
                         + juce::String((int) std::round(position.x))
                         + " Y="
                         + juce::String((int) std::round(position.y));
 
     if (hoveredPoint != nullptr)
     {
-        text += "  |  Point: X="
+        text += "  |  Current Point: X="
                 + juce::String((int) std::round(hoveredPoint->x))
                 + " Y="
                 + juce::String((int) std::round(hoveredPoint->y));
@@ -4929,6 +5078,6 @@ void MainComponent::showPointerControlSettingsDialog()
 
     auto* dialog = options.launchAsync();
     if (dialog != nullptr)
-        dialog->setSize(460, 410);
+        dialog->setSize(460, 480);
 }
 
