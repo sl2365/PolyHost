@@ -29,6 +29,7 @@ public:
     void panY(int midiValue);
 
     void wheelAdjust(int delta);
+    void dragAdjust(int delta);
 
     juce::Point<int> getCurrentScreenPosition() const;
     juce::Rectangle<int> getTargetScreenBounds() const;

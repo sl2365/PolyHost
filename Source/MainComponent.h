@@ -503,6 +503,7 @@ private:
     std::unique_ptr<PointerEditOverlayWindow> pointerEditOverlayWindow;
     void timerCallback() override;
     void showPointerControlSettingsDialog();
+    void setPointerAdjustMethodOverrideForTab(int tabIndex, int methodOverride);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };

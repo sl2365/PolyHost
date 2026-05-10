@@ -91,6 +91,12 @@ public:
     int getPointerControlAdjustSensitivity() const;
     void setPointerControlAdjustSensitivity(int amount);
 
+    int getPointerControlAdjustCcMode() const;
+    void setPointerControlAdjustCcMode(int mode);
+
+    int getPointerControlAdjustMethod() const;
+    void setPointerControlAdjustMethod(int method);
+
     juce::Colour getPointerControlCrosshairColour() const;
     void setPointerControlCrosshairColour(juce::Colour colour);
 

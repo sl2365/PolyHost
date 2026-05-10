@@ -17,6 +17,20 @@ RoutingView::ModuleRow::ModuleRow()
     };
     addAndMakeVisible(typeButton);
 
+    adjustLabel.setText("Adjust\nMethod", juce::dontSendNotification);
+    adjustLabel.setJustificationType(juce::Justification::centred);
+    adjustLabel.setColour(juce::Label::textColourId, juce::Colours::lightgrey);
+    adjustLabel.setFont(juce::Font(juce::FontOptions(11.0f)));
+    addAndMakeVisible(adjustLabel);
+
+    adjustMethodEditor.onValueChanged = [this]
+    {
+        if (onSetPointerAdjustMethodOverride)
+            onSetPointerAdjustMethodOverride(entry.tabIndex, adjustMethodEditor.getMethodOverride());
+    };
+    addAndMakeVisible(adjustMethodEditor);
+    adjustMethodEditor.setTooltip("Scroll to change Adjust Method");
+
     addAndMakeVisible(midiButton);
     addAndMakeVisible(bypassButton);
     addAndMakeVisible(upButton);
@@ -76,6 +90,7 @@ void RoutingView::ModuleRow::setModule(const ModuleEntry& newEntry)
     entry = newEntry;
 
     nameLabel.setText(entry.name, juce::dontSendNotification);
+    adjustMethodEditor.setMethodOverride(entry.pointerAdjustMethodOverride);
     infoButton.setTooltip(entry.routingTooltip.isNotEmpty() ? entry.routingTooltip
                                                             : ButtonStyling::Tooltips::routingInfo());
     infoButton.setVisible(entry.routingTooltip.isNotEmpty());
@@ -153,7 +168,18 @@ void RoutingView::ModuleRow::resized()
     bypassButton.setBounds(bypassBounds);
     area.removeFromRight(8);
 
-    midiButton.setBounds(area.removeFromRight(90).reduced(0, 8));
+    auto midiArea = area.removeFromRight(90);
+    midiButton.setBounds(midiArea.reduced(0, 8));
+    area.removeFromRight(10);
+
+    auto adjustArea = area.removeFromRight(50).translated(0, -4);
+    auto adjustLabelArea = adjustArea.removeFromTop(24);
+    adjustArea.removeFromTop(6);
+    auto adjustEditorArea = adjustArea.removeFromTop(22);
+
+    adjustLabel.setBounds(adjustLabelArea.withSizeKeepingCentre(adjustLabelArea.getWidth(), 18));
+    adjustMethodEditor.setBounds(adjustEditorArea.withSizeKeepingCentre(adjustEditorArea.getWidth(), 16));
+
     area.removeFromRight(12);
 
     nameLabel.setBounds(area);
@@ -214,6 +240,12 @@ void RoutingView::rebuildModuleRows()
     {
         auto* row = moduleRows.add(new ModuleRow());
         row->setModule(module);
+
+        row->onSetPointerAdjustMethodOverride = [this](int tabIndex, int methodOverride)
+        {
+            if (onSetPointerAdjustMethodOverride)
+                onSetPointerAdjustMethodOverride(tabIndex, methodOverride);
+        };
 
         row->onShowMidiAssignments = [this](int tabIndex, juce::Component* anchorComponent)
         {

@@ -342,6 +342,47 @@ void PointerControl::wheelAdjust(int delta)
    #endif
 }
 
+void PointerControl::dragAdjust(int delta)
+{
+    if (!hasTarget() || delta == 0)
+        return;
+
+   #if JUCE_WINDOWS
+    syncToPhysicalCursorPosition();
+
+    const int anchorX = currentX;
+    const int anchorY = currentY;
+    const int dragPixels = 1;
+    const int moveY = -delta * dragPixels;
+
+    SetCursorPos(anchorX, anchorY);
+
+    INPUT inputs[3] {};
+
+    inputs[0].type = INPUT_MOUSE;
+    inputs[0].mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+
+    inputs[1].type = INPUT_MOUSE;
+    inputs[1].mi.dwFlags = MOUSEEVENTF_MOVE;
+    inputs[1].mi.dx = 0;
+    inputs[1].mi.dy = moveY;
+
+    inputs[2].type = INPUT_MOUSE;
+    inputs[2].mi.dwFlags = MOUSEEVENTF_LEFTUP;
+
+    SendInput(3, inputs, sizeof(INPUT));
+
+    SetCursorPos(anchorX, anchorY);
+
+    currentX = anchorX;
+    currentY = anchorY;
+    virtualX = (float) currentX;
+    virtualY = (float) currentY;
+   #else
+    juce::ignoreUnused(delta);
+   #endif
+}
+
 juce::Point<int> PointerControl::getCurrentScreenPosition() const
 {
     return { currentX, currentY };

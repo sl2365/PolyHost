@@ -64,6 +64,10 @@ public:
     bool isPointerControlEditMode() const;
     void setPointerLaneTolerance(float newTolerance);
     float getPointerLaneTolerance() const;
+    int getPointerAdjustMethod() const;
+    void setPointerAdjustMethod(int method);
+    int getPointerAdjustMethodOverride() const;
+    void setPointerAdjustMethodOverride(int methodOverride);
 
     const juce::Array<PointerControl::JumpPoint>& getPointerJumpPoints() const;
     void setPointerJumpPoints(const juce::Array<PointerControl::JumpPoint>& newPoints);
@@ -119,6 +123,8 @@ private:
     juce::Array<PointerControl::JumpPoint> pointerJumpPoints;
     float pointerLaneTolerance = 30.0f;
     bool pointerControlEditMode = false;
+    int pointerAdjustMethod = 1;
+    int pointerAdjustMethodOverride = 0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginTabComponent)
 };

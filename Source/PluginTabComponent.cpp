@@ -789,3 +789,23 @@ void PluginTabComponent::clearPluginStateBaseline()
     pluginStateBaseline.reset();
 }
 
+int PluginTabComponent::getPointerAdjustMethod() const
+{
+    return pointerAdjustMethod;
+}
+
+void PluginTabComponent::setPointerAdjustMethod(int method)
+{
+    pointerAdjustMethod = juce::jlimit(1, 2, method);
+}
+
+int PluginTabComponent::getPointerAdjustMethodOverride() const
+{
+    return pointerAdjustMethodOverride;
+}
+
+void PluginTabComponent::setPointerAdjustMethodOverride(int methodOverride)
+{
+    pointerAdjustMethodOverride = juce::jlimit(0, 2, methodOverride);
+}
+

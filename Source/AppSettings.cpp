@@ -45,6 +45,8 @@ static constexpr auto kPointerControlPreviewColourB         = "pointerControlPre
 static constexpr auto kPointerControlToleranceCcNumber      = "pointerControlToleranceCcNumber";
 static constexpr auto kPointerControlSensitivityCcNumber    = "pointerControlSensitivityCcNumber";
 static constexpr auto kPointerControlAdjustSensitivity      = "pointerControlAdjustSensitivity";
+static constexpr auto kPointerControlAdjustCcMode           = "pointerControlAdjustCcMode";
+static constexpr auto kPointerControlAdjustMethod           = "pointerControlAdjustMethod";
 
 bool AppSettings::getDebugLoggingEnabled() const
 {
@@ -647,3 +649,24 @@ void AppSettings::setPointerControlShowCrosshair(bool shouldShow)
     save();
 }
 
+int AppSettings::getPointerControlAdjustCcMode() const
+{
+    return juce::jlimit(1, 4, xml->getIntAttribute(kPointerControlAdjustCcMode, 1));
+}
+
+void AppSettings::setPointerControlAdjustCcMode(int mode)
+{
+    xml->setAttribute(kPointerControlAdjustCcMode, juce::jlimit(1, 4, mode));
+    save();
+}
+
+int AppSettings::getPointerControlAdjustMethod() const
+{
+    return juce::jlimit(1, 2, xml->getIntAttribute(kPointerControlAdjustMethod, 1));
+}
+
+void AppSettings::setPointerControlAdjustMethod(int method)
+{
+    xml->setAttribute(kPointerControlAdjustMethod, juce::jlimit(1, 2, method));
+    save();
+}

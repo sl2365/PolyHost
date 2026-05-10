@@ -16,6 +16,7 @@ public:
         bool canMoveDown = false;
         int midiAssignmentCount = 0;
         juce::String routingTooltip;
+        int pointerAdjustMethodOverride = 0;
     };
 
     RoutingView();
@@ -29,6 +30,7 @@ public:
     std::function<void(int tabIndex)> onCloseTab;
     std::function<void(int tabIndex, juce::Component* anchorComponent)> onShowMidiAssignments;
     std::function<void()> onRefreshMidiDevices;
+    std::function<void(int tabIndex, int methodOverride)> onSetPointerAdjustMethodOverride;
 
     void paint(juce::Graphics& g) override;
     void resized() override;
@@ -48,15 +50,74 @@ private:
         std::function<void(int tabIndex)> onSelectTab;
         std::function<void(int tabIndex)> onCloseTab;
         std::function<void(int tabIndex, juce::Component* anchorComponent)> onShowMidiAssignments;
+        std::function<void(int tabIndex, int methodOverride)> onSetPointerAdjustMethodOverride;
 
         void paint(juce::Graphics& g) override;
         void resized() override;
 
     private:
+        class AdjustMethodEditor final : public juce::TextEditor
+        {
+        public:
+            std::function<void()> onValueChanged;
+
+            AdjustMethodEditor()
+            {
+                setReadOnly(true);
+                setMultiLine(false);
+                setColour(juce::TextEditor::backgroundColourId, ButtonStyling::defaultBackground());
+                setColour(juce::TextEditor::textColourId, juce::Colours::white);
+                setColour(juce::TextEditor::outlineColourId, juce::Colours::lightgrey.withAlpha(0.35f));
+                setJustification(juce::Justification::centred);
+                applyFontToAllText(juce::Font(juce::FontOptions(12.0f)));
+            }
+
+            void setMethodOverride(int value)
+            {
+                methodOverride = juce::jlimit(0, 2, value);
+                setText(toDisplayString(methodOverride), juce::dontSendNotification);
+            }
+
+            int getMethodOverride() const
+            {
+                return methodOverride;
+            }
+
+            void mouseWheelMove(const juce::MouseEvent& event,
+                                const juce::MouseWheelDetails& wheel) override
+            {
+                juce::ignoreUnused(event);
+
+                if (wheel.deltaY > 0.0f)
+                    setMethodOverride((methodOverride + 1) % 3);
+                else if (wheel.deltaY < 0.0f)
+                    setMethodOverride((methodOverride + 2) % 3);
+
+                if (onValueChanged)
+                    onValueChanged();
+            }
+
+        private:
+            static juce::String toDisplayString(int value)
+            {
+                switch (value)
+                {
+                    case 1: return "Scroll";
+                    case 2: return "Drag";
+                    case 0:
+                    default: return "Global";
+                }
+            }
+
+            int methodOverride = 0;
+        };
+
         ModuleEntry entry;
         ButtonStyling::RoundedTextButtonLookAndFeel roundedButtonLookAndFeel { ButtonStyling::defaultCornerRadius() };
         juce::Label nameLabel;
         ButtonStyling::TypeBadgeButton typeButton;
+        juce::Label adjustLabel;
+        AdjustMethodEditor adjustMethodEditor;
         ButtonStyling::SmallIconButton closeButton { ButtonStyling::Glyphs::close() };
         juce::TextButton midiButton { ButtonStyling::Labels::midi() };
         ButtonStyling::StatusIconButton bypassButton

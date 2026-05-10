@@ -20,7 +20,7 @@ I always liked tools like TobyBear's MiniHost, SaviHost and Tone2's NanoHost. Bu
 | Tab-order = FX routing order | ✅ Working |
 | Portable settings (no AppData/registry) | ✅ Working |
 | Audio / MIDI recording | 🔲 Planned |
-| Pointer Control functionality | ✅ Working - Absolute and Relative knob modes|
+| Pointer Control functionality | ✅ Working - Absolute (1) and Relative (3) knob modes|
 | Standalone App | ✅ Working |
 | VST3 Plugin for use in other hosts | 🔲 Planned |
 

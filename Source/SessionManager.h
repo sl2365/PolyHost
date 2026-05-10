@@ -44,6 +44,7 @@ struct SessionTabData
     juce::StringArray midiAssignedDeviceIdentifiers;
     juce::Array<SessionPointerPoint> pointerPoints;
     float pointerLaneTolerance = 30.0f;
+    int pointerAdjustMethodOverride = 0;
     bool hasPlugin = false;
     SessionPluginData plugin;
 };

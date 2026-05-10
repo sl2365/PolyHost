@@ -58,20 +58,10 @@ namespace
                 refreshToggleStatesFromAssignedIdentifiers();
             };
 
-            addAndMakeVisible(closeButton);
-            closeButton.setButtonText("Close");
-            closeButton.onClick = [this]
-            {
-                if (auto* parent = findParentComponentOfClass<juce::CallOutBox>())
-                    parent->dismiss();
-            };
-
             const int width = 280;
             const int height = 20
                              + (deviceButtons.size() * 28)
                              + 13   // space between device list and buttons
-                             + 28
-                             + 13   // space between buttons
                              + 28
                              + 2;   // bottom margin
 
@@ -97,9 +87,6 @@ namespace
             assignAllButton.setBounds(centredActionRow.removeFromLeft(assignWidth));
             centredActionRow.removeFromLeft(gap);
             clearAllButton.setBounds(centredActionRow.removeFromLeft(clearWidth));
-
-            area.removeFromTop(13); // more separation before Close
-            closeButton.setBounds(area.removeFromTop(28).withSizeKeepingCentre(80, 28));
         }
 
     private:
@@ -124,7 +111,6 @@ namespace
         juce::OwnedArray<juce::ToggleButton> deviceButtons;
         juce::TextButton assignAllButton;
         juce::TextButton clearAllButton;
-        juce::TextButton closeButton;
         std::function<void(const juce::String& deviceIdentifier)> toggleAssignment;
         std::function<void()> assignAllEnabled;
         std::function<void()> clearAllAssignments;
@@ -135,7 +121,7 @@ namespace
     {
     public:
         PointerControlSettingsComponent(AppSettings& settingsIn, float currentToleranceIn)
-            : settings(settingsIn), currentTolerance(currentToleranceIn)
+                                : settings(settingsIn), currentTolerance(currentToleranceIn)
         {
             auto configureLabel = [this](juce::Label& label, const juce::String& text, juce::Justification justification)
             {
@@ -148,9 +134,11 @@ namespace
             configureLabel(xCcLabel, "X CC:", juce::Justification::centredRight);
             configureLabel(yCcLabel, "Y CC:", juce::Justification::centredRight);
             configureLabel(adjustCcLabel, "Adjust CC:", juce::Justification::centredRight);
+            configureLabel(adjustModeLabel, "Adjust Mode:", juce::Justification::centredRight);
             configureLabel(toleranceCcLabel, "Tolerance CC:", juce::Justification::centredRight);
             configureLabel(sensitivityCcLabel, "Sensitivity CC:", juce::Justification::centredRight);
             configureLabel(adjustSensitivityLabel, "Adjust Sens:", juce::Justification::centredRight);
+            configureLabel(adjustMethodLabel, "Adjust Method:", juce::Justification::centredRight);
             configureLabel(xWeightLabel, "X Weight:", juce::Justification::centredRight);
             configureLabel(yWeightLabel, "Y Weight:", juce::Justification::centredRight);
             configureLabel(overlayTransparencyLabel, "Overlay\nTransparency:", juce::Justification::centredRight);
@@ -167,8 +155,10 @@ namespace
             configureTipLabel(tipXcc, "Horizontal pointer control movement.");
             configureTipLabel(tipYcc, "Vertical pointer control movement.");
             configureTipLabel(tipAdjustCc, "Used to adjust software parameters.");
+            configureTipLabel(tipAdjustMode, "");
             configureTipLabel(tipAdjustSensitivity, "Repeats adjust steps per encoder movement. Higher values help stubborn plugin controls.");
             configureTipLabel(tipSensitivityCc, "MIDI CC used to control Adjust Sensitivity live.");
+            configureTipLabel(tipAdjustMethod, "");
             configureTipLabel(tipWeights, "Fallback snap weighting. (Legacy?)\nDefaults: X=1.0  Y=0.2");
             configureTipLabel(tipOverlay, "Overlay darkness while editing.");
             configureTipLabel(tipPointSize, "Size of saved jump-point colour markers.");
@@ -176,14 +166,34 @@ namespace
             configureTipLabel(tipRgb, "Point RGB: Saved point colour.\nPreview RGB: Point colour on mouse down.");
             configureTipLabel(tipCrosshairRgba, "Crosshair colour and alpha.");
 
+            addAndMakeVisible(separatorAfterAdjustMethod);
+            addAndMakeVisible(separatorAfterAdjustSensitivity);
+            addAndMakeVisible(separatorAfterWeights);
+
             configureCcEditor(xCcEditor, settings.getPointerControlXccNumber());
             configureCcEditor(yCcEditor, settings.getPointerControlYccNumber());
             configureCcEditor(adjustCcEditor, settings.getPointerControlAdjustCcNumber());
+            configureCcEditor(xCcEditor, settings.getPointerControlXccNumber());
+            configureCcEditor(yCcEditor, settings.getPointerControlYccNumber());
+            configureCcEditor(adjustCcEditor, settings.getPointerControlAdjustCcNumber());
+            configureIntegerEditor(adjustModeEditor,
+                                   settings.getPointerControlAdjustCcMode(),
+                                   1, 4);
+
             configureCcEditor(toleranceCcEditor, settings.getPointerControlToleranceCcNumber());
             configureCcEditor(sensitivityCcEditor, settings.getPointerControlSensitivityCcNumber());
             configureIntegerEditor(adjustSensitivityEditor,
                                    settings.getPointerControlAdjustSensitivity(),
                                    1, 20);
+            configureIntegerEditor(adjustMethodEditor,
+                                   settings.getPointerControlAdjustMethod(),
+                                   1, 2);
+
+            updateAdjustModeTip();
+            updateAdjustMethodTip();
+
+            configureWeightEditor(xWeightEditor, settings.getPointerControlXSnapWeight());
+            configureWeightEditor(yWeightEditor, settings.getPointerControlYSnapWeight());
             configureWeightEditor(xWeightEditor, settings.getPointerControlXSnapWeight());
             configureWeightEditor(yWeightEditor, settings.getPointerControlYSnapWeight());
 
@@ -221,9 +231,11 @@ namespace
             settings.setPointerControlXccNumber(parseInt(xCcEditor.getText(), 24, 0, 127));
             settings.setPointerControlYccNumber(parseInt(yCcEditor.getText(), 25, 0, 127));
             settings.setPointerControlAdjustCcNumber(parseInt(adjustCcEditor.getText(), 26, 0, 127));
+            settings.setPointerControlAdjustCcMode(parseInt(adjustModeEditor.getText(), 1, 1, 4));
             settings.setPointerControlToleranceCcNumber(parseInt(toleranceCcEditor.getText(), 22, 0, 127));
             settings.setPointerControlSensitivityCcNumber(parseInt(sensitivityCcEditor.getText(), 23, 0, 127));
             settings.setPointerControlAdjustSensitivity(parseInt(adjustSensitivityEditor.getText(), 1, 1, 20));
+            settings.setPointerControlAdjustMethod(parseInt(adjustMethodEditor.getText(), 1, 1, 2));
 
             settings.setPointerControlXSnapWeight(parseFloat(xWeightEditor.getText(), 1.0f, 0.001f, 100.0f));
             settings.setPointerControlYSnapWeight(parseFloat(yWeightEditor.getText(), 0.20f, 0.001f, 100.0f));
@@ -249,14 +261,23 @@ namespace
                 (juce::uint8) parseInt(crosshairColourAEditor.getText(), 70, 0, 255)));
         }
 
+        int getSelectedAdjustMethod() const
+        {
+            return parseInt(adjustMethodEditor.getText(), 1, 1, 2);
+        }
+
         void resetToDefaults()
         {
             xCcEditor.setText("24", juce::dontSendNotification);
             yCcEditor.setText("25", juce::dontSendNotification);
             adjustCcEditor.setText("26", juce::dontSendNotification);
+            adjustModeEditor.setText("1", juce::dontSendNotification);
+            updateAdjustModeTip();
             toleranceCcEditor.setText("22", juce::dontSendNotification);
             sensitivityCcEditor.setText("23", juce::dontSendNotification);
             adjustSensitivityEditor.setText("1", juce::dontSendNotification);
+            adjustMethodEditor.setText("1", juce::dontSendNotification);
+            updateAdjustMethodTip();
 
             xWeightEditor.setText("1.0", juce::dontSendNotification);
             yWeightEditor.setText("0.2", juce::dontSendNotification);
@@ -291,6 +312,7 @@ namespace
             constexpr int infoGap = 8;
             constexpr int infoWidth = 220;
             constexpr int rgbFieldWidth = 40;
+            constexpr int separatorHeight = 8;
 
             auto layoutStandardRow = [&](juce::Label& label,
                                          juce::TextEditor& editor,
@@ -309,9 +331,21 @@ namespace
                 area.removeFromTop(rowGap);
             };
 
+            auto layoutSeparator = [&](juce::Component& separator)
+            {
+                auto row = area.removeFromTop(separatorHeight);
+                separator.setBounds(row.withTrimmedLeft(labelWidth)
+                                       .withTrimmedRight(8)
+                                       .withSizeKeepingCentre(row.getWidth() - labelWidth - 8, 1));
+                area.removeFromTop(rowGap);
+            };
+
             layoutStandardRow(xCcLabel, xCcEditor, &tipXcc);
             layoutStandardRow(yCcLabel, yCcEditor, &tipYcc);
             layoutStandardRow(adjustCcLabel, adjustCcEditor, &tipAdjustCc);
+            layoutStandardRow(adjustModeLabel, adjustModeEditor, &tipAdjustMode);
+            layoutStandardRow(adjustMethodLabel, adjustMethodEditor, &tipAdjustMethod);
+            layoutSeparator(separatorAfterAdjustMethod);
 
             {
                 auto row = area.removeFromTop(rowHeight);
@@ -331,6 +365,7 @@ namespace
 
             layoutStandardRow(sensitivityCcLabel, sensitivityCcEditor, &tipSensitivityCc);
             layoutStandardRow(adjustSensitivityLabel, adjustSensitivityEditor, &tipAdjustSensitivity);
+            layoutSeparator(separatorAfterAdjustSensitivity);
 
             {
                 auto combinedArea = area.removeFromTop(rowHeight * 2 + rowGap);
@@ -353,6 +388,8 @@ namespace
 
                 area.removeFromTop(rowGap);
             }
+
+            layoutSeparator(separatorAfterWeights);
             layoutStandardRow(overlayTransparencyLabel, overlayTransparencyEditor, &tipOverlay);
             layoutStandardRow(pointSizeLabel, pointSizeEditor, &tipPointSize);
 
@@ -426,10 +463,22 @@ namespace
 
             g.setColour(juce::Colours::white.withAlpha(0.18f));
             g.drawRect(panelBounds, 1);
+
+            g.setColour(juce::Colours::white.withAlpha(0.16f));
+
+            for (auto* separator : { &separatorAfterAdjustMethod,
+                                     &separatorAfterAdjustSensitivity,
+                                     &separatorAfterWeights })
+            {
+                auto bounds = separator->getBounds();
+
+                if (!bounds.isEmpty())
+                    g.fillRect(bounds.withHeight(1));
+            }
         }
 
     private:
-        class ScrollableTextEditor final : public juce::TextEditor
+        class ScrollableTextEditor : public juce::TextEditor
         {
         public:
             using juce::TextEditor::TextEditor;
@@ -586,23 +635,142 @@ namespace
             return juce::jlimit(minValue, maxValue, value);
         }
 
+        static juce::String getAdjustModeDescription(int mode)
+        {
+            switch (mode)
+            {
+                case 2:
+                    return "Relative Mode 1:\n 127 = increment, 1 = decrement.";
+
+                case 3:
+                    return "Relative Mode 2:  65 = increment,\n 64 = no change, 63 = decrement.";
+
+                case 4:
+                    return "Relative Mode 3:  17 = increment,\n 16 = no change, 15 = decrement.";
+
+                case 1:
+                default:
+                    return "Absolute Mode:  Uses delta between\n  successive CC values.";
+            }
+        }
+
+        static juce::String getAdjustMethodDescription(int method)
+        {
+            switch (method)
+            {
+                case 2:
+                    return "Method 2:  Uses vertical mouse drag\n to adjust parameters.";
+
+                case 1:
+                default:
+                    return "Method 1:  Uses the mouse wheel\n to adjust parameters.";
+            }
+        }
+
+        void updateAdjustModeTip()
+        {
+            tipAdjustMode.setText(getAdjustModeDescription(parseInt(adjustModeEditor.getText(), 1, 1, 4)),
+                                  juce::dontSendNotification);
+            tipAdjustMode.repaint();
+        }
+
+        void updateAdjustMethodTip()
+        {
+            const int method = parseInt(adjustMethodEditor.getText(), 1, 1, 2);
+            adjustMethodEditor.setText(juce::String(method), juce::dontSendNotification);
+            tipAdjustMethod.setText(getAdjustMethodDescription(method),
+                                    juce::dontSendNotification);
+            tipAdjustMethod.repaint();
+        }
+
         AppSettings& settings;
         float currentTolerance = 30.0f;
 
-        juce::Label xCcLabel, yCcLabel, adjustCcLabel, toleranceCcLabel, sensitivityCcLabel;
+        juce::Label xCcLabel, yCcLabel, adjustCcLabel, adjustModeLabel, toleranceCcLabel, sensitivityCcLabel, adjustMethodLabel;
         juce::Label xWeightLabel, yWeightLabel, adjustSensitivityLabel;
         juce::Label overlayTransparencyLabel, pointSizeLabel, showCrosshairLabel;
         juce::Label pointRgbLabel, previewRgbLabel, crosshairRgbaLabel;
 
         juce::Label currentToleranceInfoLabel, currentToleranceLineLabel;
 
-        juce::Label tipXcc, tipYcc, tipAdjustCc, tipAdjustSensitivity, tipSensitivityCc;
+        juce::Label tipXcc, tipYcc, tipAdjustCc, tipAdjustMode, tipAdjustSensitivity, tipSensitivityCc, tipAdjustMethod;
         juce::Label tipWeights, tipOverlay, tipPointSize, tipShowCrosshair, tipRgb, tipCrosshairRgba;
 
         ScrollableTextEditor xCcEditor, yCcEditor, adjustCcEditor, toleranceCcEditor, sensitivityCcEditor;
+        class AdjustModeEditor final : public ScrollableTextEditor
+        {
+        public:
+            explicit AdjustModeEditor(PointerControlSettingsComponent& ownerIn)
+                : owner(ownerIn)
+            {
+            }
+
+            void mouseWheelMove(const juce::MouseEvent& event,
+                                const juce::MouseWheelDetails& wheel) override
+            {
+                ScrollableTextEditor::mouseWheelMove(event, wheel);
+                owner.updateAdjustModeTip();
+            }
+
+            void focusLost(FocusChangeType cause) override
+            {
+                ScrollableTextEditor::focusLost(cause);
+                owner.updateAdjustModeTip();
+            }
+
+            bool keyPressed(const juce::KeyPress& key) override
+            {
+                const bool handled = ScrollableTextEditor::keyPressed(key);
+                owner.updateAdjustModeTip();
+                return handled;
+            }
+
+        private:
+            PointerControlSettingsComponent& owner;
+        };
+
+        AdjustModeEditor adjustModeEditor { *this };
+        
+        class AdjustMethodEditor final : public ScrollableTextEditor
+        {
+        public:
+            explicit AdjustMethodEditor(PointerControlSettingsComponent& ownerIn)
+                : owner(ownerIn)
+            {
+            }
+
+            void mouseWheelMove(const juce::MouseEvent& event,
+                                const juce::MouseWheelDetails& wheel) override
+            {
+                ScrollableTextEditor::mouseWheelMove(event, wheel);
+                owner.updateAdjustMethodTip();
+            }
+
+            void focusLost(FocusChangeType cause) override
+            {
+                ScrollableTextEditor::focusLost(cause);
+                owner.updateAdjustMethodTip();
+            }
+
+            bool keyPressed(const juce::KeyPress& key) override
+            {
+                const bool handled = ScrollableTextEditor::keyPressed(key);
+                owner.updateAdjustMethodTip();
+                return handled;
+            }
+
+        private:
+            PointerControlSettingsComponent& owner;
+        };
+
+        AdjustMethodEditor adjustMethodEditor { *this };
         ScrollableTextEditor xWeightEditor, yWeightEditor, adjustSensitivityEditor;
         ScrollableTextEditor overlayTransparencyEditor, pointSizeEditor;
         juce::ToggleButton showCrosshairToggle;
+
+        juce::Component separatorAfterAdjustMethod;
+        juce::Component separatorAfterAdjustSensitivity;
+        juce::Component separatorAfterWeights;
 
         ScrollableTextEditor pointColourREditor, pointColourGEditor, pointColourBEditor;
         ScrollableTextEditor previewColourREditor, previewColourGEditor, previewColourBEditor;
@@ -1249,6 +1417,11 @@ MainComponent::MainComponent()
         showMidiAssignmentsCallout(tabIndex, anchorComponent);
     };
 
+    routingView.onSetPointerAdjustMethodOverride = [this](int tabIndex, int methodOverride)
+    {
+        setPointerAdjustMethodOverrideForTab(tabIndex, methodOverride);
+    };
+
     routingView.onRefreshMidiDevices = [this]
     {
         refreshMidiDevices();
@@ -1349,28 +1522,79 @@ MainComponent::MainComponent()
             }
             else if (cc == pointerAdjustCc)
             {
-                if (lastPointerAdjustCcValue >= 0)
+                const int adjustMode = settings.getPointerControlAdjustCcMode();
+                int delta = 0;
+
+                if (adjustMode == 2)
                 {
-                    int delta = value - lastPointerAdjustCcValue;
-
-                    // Handle wraparound for endless encoders a bit better
-                    if (delta > 64)
-                        delta -= 128;
-                    else if (delta < -64)
-                        delta += 128;
-
-                    if (delta != 0)
+                    // Relative 1/127
+                    if (value == 127)
+                        delta = -1;
+                    else if (value == 1)
+                        delta = 1;
+                }
+                else if (adjustMode == 3)
+                {
+                    // Relative 63/64/65
+                    if (value == 63)
+                        delta = -1;
+                    else if (value == 65)
+                        delta = 1;
+                }
+                else if (adjustMode == 4)
+                {
+                    // Relative 15/16/17
+                    if (value == 15)
+                        delta = -1;
+                    else if (value == 17)
+                        delta = 1;
+                }
+                else
+                {
+                    if (lastPointerAdjustCcValue >= 0)
                     {
-                        const int sensitivity = settings.getPointerControlAdjustSensitivity();
-                        const int direction = (delta > 0 ? 1 : -1);
-                        const int repeatCount = std::abs(delta) * sensitivity;
+                        delta = value - lastPointerAdjustCcValue;
 
-                        for (int i = 0; i < repeatCount; ++i)
+                        // Handle wraparound for endless encoders a bit better
+                        if (delta > 64)
+                            delta -= 128;
+                        else if (delta < -64)
+                            delta += 128;
+                    }
+
+                    lastPointerAdjustCcValue = value;
+                }
+
+                if (delta != 0)
+                {
+                    const int sensitivity = settings.getPointerControlAdjustSensitivity();
+
+                    int adjustMethod = settings.getPointerControlAdjustMethod();
+
+                    if (auto* tc = getTabComponent(tabs.getCurrentTabIndex()))
+                    {
+                        const int methodOverride = tc->getPointerAdjustMethodOverride();
+
+                        if (methodOverride == 1)
+                            adjustMethod = 1;
+                        else if (methodOverride == 2)
+                            adjustMethod = 2;
+                    }
+
+                    const int direction = (delta > 0 ? 1 : -1);
+                    const int repeatCount = std::abs(delta) * sensitivity;
+
+                    for (int i = 0; i < repeatCount; ++i)
+                    {
+                        if (adjustMethod == 2)
+                            pointerControl.dragAdjust(direction);
+                        else
                             pointerControl.wheelAdjust(direction);
                     }
                 }
 
-                lastPointerAdjustCcValue = value;
+                if (adjustMode != 1)
+                    lastPointerAdjustCcValue = -1;
             }
             else if (cc == pointerToleranceCc)
             {
@@ -1500,6 +1724,7 @@ SessionData MainComponent::buildSessionData() const
                 tab.midiAssignedDeviceIdentifiers = midiState->assignedDeviceIdentifiers;
 
             tab.pointerLaneTolerance = tc->getPointerLaneTolerance();
+            tab.pointerAdjustMethodOverride = tc->getPointerAdjustMethodOverride();
 
             const auto& jumpPoints = tc->getPointerJumpPoints();
 
@@ -1591,6 +1816,7 @@ void MainComponent::applySessionData(const SessionData& session,
             }
 
             tc->setPointerLaneTolerance(tabData.pointerLaneTolerance);
+            tc->setPointerAdjustMethodOverride(tabData.pointerAdjustMethodOverride);
 
             {
                 juce::Array<PointerControl::JumpPoint> jumpPoints;
@@ -2480,16 +2706,21 @@ juce::PopupMenu MainComponent::getMenuForIndex(int index, const juce::String&)
         case 3: menu.addItem(401, "Record Audio...  [TODO]"); menu.addItem(402, "Record MIDI...  [TODO]"); break;
         case 4:
         {
-            menu.addItem(501,
-                         "Auto-Save Preset After Plugin Repair",
-                         true,
-                         settings.getAutoSaveAfterPluginRepair());
-            menu.addSeparator();
             menu.addItem(menuPointerControlSettings, "Pointer Control Settings...");
-            menu.addItem(502, "Add Plugin Scan Folder...");
-            menu.addItem(503, "Show Plugin Scan Folders");
-            menu.addItem(504, "Clear Plugin Scan Folders",
-                         settings.getPluginScanFolders().size() > 0);
+            menu.addSeparator();
+
+            juce::PopupMenu pluginRepairsMenu;
+            pluginRepairsMenu.addItem(501,
+                                      "Auto-Save Preset After Plugin Repair",
+                                      true,
+                                      settings.getAutoSaveAfterPluginRepair());
+            pluginRepairsMenu.addSeparator();
+            pluginRepairsMenu.addItem(502, "Add Plugin Scan Folder...");
+            pluginRepairsMenu.addItem(503, "Show Plugin Scan Folders");
+            pluginRepairsMenu.addItem(504, "Clear Plugin Scan Folders",
+                                      settings.getPluginScanFolders().size() > 0);
+
+            menu.addSubMenu("Plugin Repairs", pluginRepairsMenu);
             menu.addSeparator();
 
             juce::PopupMenu debugMenu;
@@ -4490,6 +4721,7 @@ void MainComponent::refreshRoutingView()
         entry.isBypassed = tc->isBypassed();
         entry.canMoveUp = (tabIndex > 0);
         entry.canMoveDown = (tabIndex < pluginTabs.size() - 1);
+        entry.pointerAdjustMethodOverride = tc->getPointerAdjustMethodOverride();
         if (const auto* midiState = getMidiRoutingStateForTab(tabIndex))
             entry.midiAssignmentCount = midiState->assignedDeviceIdentifiers.size();
         else
@@ -5118,7 +5350,20 @@ void MainComponent::showPointerControlSettingsDialog()
     auto* dialog = options.launchAsync();
     if (dialog != nullptr)
     {
-        dialog->centreWithSize(460, 545);
+        dialog->centreWithSize(460, 655);
+    }
+}
+
+void MainComponent::setPointerAdjustMethodOverrideForTab(int tabIndex, int methodOverride)
+{
+    if (!juce::isPositiveAndBelow(tabIndex, pluginTabs.size()))
+        return;
+
+    if (auto* tc = getTabComponent(tabIndex))
+    {
+        tc->setPointerAdjustMethodOverride(methodOverride);
+        refreshRoutingView();
+        markSessionDirty();
     }
 }
 
